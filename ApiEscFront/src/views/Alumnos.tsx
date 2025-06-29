@@ -119,7 +119,7 @@ function Alumnos() {
         });
       })
         .then(res => res.json())
-        .then(data => setAlumnos([data]))
+        .then(data => setAlumnos(data))
         .catch(error => {
             console.error("Error al crear el usuario:", error);
             alert('Error al crear el usuario');
@@ -184,7 +184,7 @@ function Alumnos() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#green',
+                backgroundColor: 'green',
                 color: 'white',
                 border: 'none',
                 zIndex: 1050
@@ -202,11 +202,17 @@ function Alumnos() {
                     <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
                 </div>
                 <div className="modal-body">
+                    <label className="form-label">USUARIO</label>
                     <input className="form-control mb-2" name="username" placeholder="Username" value={nuevoUsuario.username} onChange={handleChange} />
+                    <label className="form-label">CONTRASEÑA</label> 
                     <input className="form-control mb-2" name="password" type="password" placeholder="Password" value={nuevoUsuario.password} onChange={handleChange} />
+                    <label className="form-label">EMAIL</label>
                     <input className="form-control mb-2" name="email" placeholder="Email" value={nuevoUsuario.email} onChange={handleChange} />
+                    <label className="form-label">DNI</label>
                     <input className="form-control mb-2" name="dni" placeholder="DNI" value={nuevoUsuario.dni} onChange={handleChange} />
+                    <label className="form-label">NOMBRE</label>
                     <input className="form-control mb-2" name="firstName" placeholder="Nombre" value={nuevoUsuario.firstName} onChange={handleChange} />
+                    <label className="form-label">APELLIDO</label>
                     <input className="form-control mb-2" name="lastName" placeholder="Apellido" value={nuevoUsuario.lastName} onChange={handleChange} />
                     <select className="form-select" name="type" value={nuevoUsuario.type} onChange={handleChange}>
                     <option value="Alumno">Alumno</option>

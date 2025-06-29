@@ -5,6 +5,10 @@ from psycopg2 import IntegrityError
 from auth.seguridad import obtener_usuario_desde_token, Seguridad
 from sqlalchemy.orm import (joinedload,load_only)
 from typing import List
+from models.carrera import Carrera
+from models.carreraUsuario import UsuarioCarrera
+from models.pago import Pago
+
 
 user = APIRouter()
 userDetail = APIRouter()
@@ -338,10 +342,56 @@ def crear_usuario(user: InputRegister):
             )
     except Exception as e:
         session.rollback()
-        print("Error inesperado:", e)
+        print("Error al eliminar usuario:", e)
         return JSONResponse(
             status_code=500, content={"detail": "Error al agregar usuario"}
         )
     finally:
         session.close()
+
+@user.delete("/users/{user_id}", response_model=dict)
+def eliminar_usuario(user_id: int, payload: dict = Depends(obtener_usuario_desde_token)):
+    try:
+        if payload["type"] != "Admin":
+            raise HTTPException(status_code=403, detail="No tienes permiso para eliminar usuarios")
+
+        user = session.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        # Eliminar entradas de la tabla pivote (carreraUsuario)
+        pivotes = session.query(UsuarioCarrera).filter(UsuarioCarrera.user_id == user_id).all()
+        for pivote in pivotes:
+            session.delete(pivote)
+
+        # Eliminar carreras creadas por el usuario (si es Admin o similar)
+        carreras_creadas = session.query(Carrera).filter(Carrera.user_id == user_id).all()
+        for carrera in carreras_creadas:
+            session.delete(carrera)
+
+        # Eliminar pagos asociados al usuario
+        pagos = session.query(Pago).filter(Pago.user_id == user_id).all()
+        for pago in pagos:
+            session.delete(pago)
+
+        # Eliminar UserDetail si existe
+        if user.id_userdetail:
+            detalle = session.query(UserDetail).filter(UserDetail.id == user.id_userdetail).first()
+            if detalle:
+                session.delete(detalle)
+
+        #  Finalmente eliminar el usuario
+        session.delete(user)
+        session.commit()
+
+        return {"msg": "Usuario y datos asociados eliminados correctamente"}
+
+    except Exception as e:
+        session.rollback()
+        print("Error al eliminar usuario:", e)
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+    finally:
+        session.close()
+
+
 #endregion rutas sin uso
