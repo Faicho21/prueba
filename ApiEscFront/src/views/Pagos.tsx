@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Select from 'react-select';
 
 interface Pago {
   id: number;
@@ -61,7 +62,6 @@ const Pagos: React.FC = () => {
 
   useEffect(() => {
     if (tipoUsuario === 'Admin') {
-      //Fetch pagos
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/todos`, {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
@@ -72,7 +72,7 @@ const Pagos: React.FC = () => {
           else setError("Los datos recibidos no son válidos.");
         })
         .catch(() => setError('No se pudieron cargar los pagos.'));
-      //Fetch alumnos
+
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/users/all`, {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
@@ -83,20 +83,26 @@ const Pagos: React.FC = () => {
           setAlumnos(alumnos);
         })
         .catch(() => setError('No se pudieron cargar los alumnos.'));
-      //Fetch carreras
+
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/todas`, {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
       })
         .then(res => res.json())
         .then(data => {
-          if (Array.isArray(data)) {setCarreras(data);
-          }
-          else setError("Los datos recibidos no son válidos.");
+          if (Array.isArray(data)) {
+            setCarreras(data);
+          } else setError("Los datos recibidos no son válidos.");
         })
         .catch(() => setError('No se pudieron cargar las carreras.'));
     }
   }, [tipoUsuario]);
+
+  // 🔄 CAMBIO: Opciones para el select con búsqueda
+  const opcionesAlumnos = alumnos.map(alumno => ({
+    value: alumno.id,
+    label: `${alumno.userdetail.firstName} ${alumno.userdetail.lastName}`,
+  }));
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -137,7 +143,6 @@ const Pagos: React.FC = () => {
       });
   };
 
-  // Funcion eliminar pagos
   const eliminarPago = (id: number) => {
     if (!window.confirm('¿Eliminar este pago?')) return;
 
@@ -152,7 +157,6 @@ const Pagos: React.FC = () => {
       .catch(() => setError('Error al eliminar el pago.'));
   };
 
-  // Funcion editar pagos
   const editarPago = (pago: Pago) => {
     fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/editarPago/${pago.id}`, {
       method: 'PUT',
@@ -186,21 +190,19 @@ const Pagos: React.FC = () => {
       <div className="card mb-4">
         <div className="card-header">Nuevo Pago</div>
         <div className="card-body row g-3">
-          <div className="col-md-3">
-            <select
-              className="form-select"
-              name="user_id"
-              value={nuevoPago.user_id}
-              onChange={handleInputChange}
-            >
-              <option value={0}>Seleccionar alumno</option>
-              {alumnos.map(alumno => (
-                <option key={alumno.id} value={alumno.id}>
-                  {alumno.userdetail.firstName} {alumno.userdetail.lastName}
-                </option>
-              ))}
-            </select>
+          <div className="col-md-4">
+            <label className="form-label">Seleccionar alumno</label>
+            <Select
+              options={opcionesAlumnos}
+              placeholder="Buscar alumno..."
+              onChange={(selectedOption) =>
+                setNuevoPago({ ...nuevoPago, user_id: selectedOption?.value || 0 })
+              }
+              value={opcionesAlumnos.find(opt => opt.value === nuevoPago.user_id) || null}
+              isClearable
+            />
           </div>
+
           <div className="col-md-3">
             <select
               className="form-select"
@@ -235,7 +237,7 @@ const Pagos: React.FC = () => {
               onChange={handleInputChange}
             />
           </div>
-          <div className="col-md-2 d-grid">
+          <div className="col-md-1 d-grid">
             <button className="btn btn-success" onClick={crearPago}>
               Registrar
             </button>
@@ -263,14 +265,13 @@ const Pagos: React.FC = () => {
                   <td>{p.id}</td>
                   <td>
                     {(() => {
-                              const user = alumnos.find(a => a.id === p.user_id);
-                              return user
-                              ? `${user.userdetail.firstName} ${user.userdetail.lastName}`
-                              : `ID: ${p.user_id}`;
-                            }
-                    )()}
+                      const user = alumnos.find(a => a.id === p.user_id);
+                      return user
+                        ? `${user.userdetail.firstName} ${user.userdetail.lastName}`
+                        : `ID: ${p.user_id}`;
+                    })()}
                   </td>
-                  <td>{carreras.find(c=> c.id === p.carrera_id)?.nombre || `ID: ${p.carrera_id}`}</td>
+                  <td>{carreras.find(c => c.id === p.carrera_id)?.nombre || `ID: ${p.carrera_id}`}</td>
                   <td>{p.monto}</td>
                   <td>{p.mes}</td>
                   <td>
