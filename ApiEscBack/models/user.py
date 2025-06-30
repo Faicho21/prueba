@@ -13,7 +13,7 @@ class User(Base):
    id = Column("id", Integer, primary_key=True)
    username = Column("username", String)
    password = Column("password", String)
-   id_userdetail = Column(Integer, ForeignKey("userdetails.id"))
+   id_userdetail = Column(Integer, ForeignKey("userdetails.id", ondelete="CASCADE")) ##preguntar a juani si es correcto
    userdetail = relationship("UserDetail", backref="user", uselist=False)
    rmateria = relationship("Materia", back_populates="usuario", uselist=True)
    pago = relationship("Pago", back_populates="user", uselist=True)

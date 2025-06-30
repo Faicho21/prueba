@@ -112,6 +112,10 @@ const Pagos: React.FC = () => {
       setError('Todos los campos son obligatorios.');
       return;
     }
+    if (nuevoPago.monto <= 0) { // O solo < 0 si quieres permitir 0
+    setError('El monto del pago no puede ser 0.');
+    return;
+  }
 
     fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/nuevoPago`, {
       method: 'POST',
@@ -202,18 +206,36 @@ const Pagos: React.FC = () => {
             </select>
           </div>
           <div className="col-md-3">
+            
             <select
+              id="carreraSelect"
               className="form-select"
               name="carrera_id"
               value={nuevoPago.carrera_id}
               onChange={handleInputChange}
             >
               <option value={0}>Seleccionar carrera</option>
-              {carreras.map(carrera => (
-                <option key={carrera.id} value={carrera.id}>
-                  {carrera.nombre}
-                </option>
-              ))}
+              {
+                // Paso 1: Obtener solo los nombres únicos de las carreras
+                Array.from(new Set(carreras.map(c => c.nombre)))
+                .map(nombreUnico => {
+                  // Paso 2: Encontrar el objeto de carrera original para obtener su ID
+                  // Aquí asumimos que si el nombre es único, queremos el ID de la primera carrera con ese nombre.
+                  // Si 'Programación' tiene el ID 10 en un objeto y ID 11 en otro,
+                  // esto tomará el ID del primer objeto 'Programación' que encuentre.
+                  const carreraOriginal = carreras.find(c => c.nombre === nombreUnico);
+
+                  // Esto es una salvaguarda, aunque en este caso 'carreraOriginal'
+                  // siempre debería existir si 'nombreUnico' proviene de 'carreras'.
+                  if (!carreraOriginal) return null;
+
+                  return (
+                    <option key={carreraOriginal.id} value={carreraOriginal.id}>
+                      {nombreUnico}
+                    </option>
+                  );
+                })
+              }
             </select>
           </div>
           <div className="col-md-1">
