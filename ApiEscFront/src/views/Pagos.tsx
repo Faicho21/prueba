@@ -182,7 +182,9 @@ const Pagos: React.FC = () => {
 
   return (
     <div className="container mt-5">
-      <h2 className="mb-4 text-center">Gestión de Pagos</h2>
+      <div className="p-4 mb-4 bg-success bg-opacity-10 border-start border-4 border-success rounded shadow-sm">
+        <h2 className="text-success m-0 text-center">Gestión de Pagos</h2>
+      </div>
 
       {mensaje && <div className="alert alert-success">{mensaje}</div>}
       {error && <div className="alert alert-danger">{error}</div>}

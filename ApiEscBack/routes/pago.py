@@ -81,15 +81,15 @@ def ver_todos_los_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
     finally:
         session.close()
         
-@pago.get("/pago/mis_pagos")     #para que un alumno vea sus pagos
+@pago.get("/pago/mis_pagos")
 def ver_mis_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
     if payload["type"] != "Alumno":
-        raise JSONResponse(status_code=403, detail="Solo los alumnos puede ver estos pagos")
+        raise HTTPException(status_code=403, detail="Solo los alumnos pueden ver estos pagos")
     
     try:
-        user = session.query(User).filter_by(username=payload["usuario"]).first()
+        user = session.query(User).filter_by(id=payload["sub"]).first()
         if user:
             return user.pago
-        return JSONResponse(status_code=404, content={"message": "Usuario no encontrado"})
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
     finally:
         session.close()
