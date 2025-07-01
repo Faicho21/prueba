@@ -19,45 +19,49 @@ function Nvar() {
   }, []);
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark" style={{ backgroundColor: "#3ab397" }}>
-      <div className="container">
-        <NavLink className="navbar-brand" to="/home">Mi Escuela</NavLink>
-        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span className="navbar-toggler-icon"></span>
-        </button>
+  <nav className="navbar navbar-expand-lg navbar-dark" style={{ backgroundColor: "#3ab397" }}>
+    <div className="container">
+      <NavLink className="navbar-brand" to="/home">Mi Escuela</NavLink>
+      <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span className="navbar-toggler-icon"></span>
+      </button>
 
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav me-auto">
+      <div className="collapse navbar-collapse" id="navbarNav">
+        <ul className="navbar-nav me-auto">
+          <li className="nav-item">
+            <NavLink className="nav-link" to="/contactos">Contactos</NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink className="nav-link" to="/perfil">Perfil</NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink className="nav-link" to="/notificaciones">Notificaciones</NavLink>
+          </li>
+
+          {tipoUsuario === "Alumno" && (
             <li className="nav-item">
-              <NavLink className="nav-link" to="/contactos">Contactos</NavLink>
+              <NavLink className="nav-link" to="/mis-pagos">Mis pagos</NavLink>
             </li>
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/perfil">Perfil</NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/notificaciones">Notificaciones</NavLink>
-            </li>
-            {tipoUsuario !== "Admin" && (
+          )}
+
+          {tipoUsuario === "Admin" && (
+            <>
               <li className="nav-item">
-                <NavLink className="nav-link" to="/pagos">Mis pagos</NavLink>
-              </li>
-            )}
-            {tipoUsuario === "Admin" && (
-              <><li className="nav-item">
                 <NavLink className="nav-link" to="/pagos">Pagos</NavLink>
-              </li><li className="nav-item">
-                  <NavLink className="nav-link" to="/alumnos">Alumnos</NavLink>
-                </li></>
-            )}
-          </ul>
+              </li>
+              <li className="nav-item">
+                <NavLink className="nav-link" to="/alumnos">Alumnos</NavLink>
+              </li>
+            </>
+          )}
+        </ul>
 
-          <button className="btn btn-outline-light" onClick={Logout}>
-            Cerrar Sesión
-          </button>
-        </div>
+        <button className="btn btn-outline-light" onClick={Logout}>
+          Cerrar Sesión
+        </button>
       </div>
-    </nav>
-  );
+    </div>
+  </nav>
+);
 }
-
 export default Nvar;
