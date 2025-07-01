@@ -25,6 +25,7 @@ function App() {
             <Route path="/pagos" element={<Pagos />} />
             <Route path="/perfil" element={<Perfil/>} />
             <Route path="/alumnos" element={<Alumnos />} />
+            <Route path="/Notificaciones" element={<Home />} />
           </Route>
         </Route>
       </Routes>

@@ -10,6 +10,27 @@ function Perfil() {
     email: ''
   });
 
+  // Inyectar estilos con animación
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideFadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .fade-in-green {
+        animation: slideFadeIn 0.6s ease-out forwards;
+        border: 2px solid #3ab397;
+        border-radius: 15px;
+        background-color: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(6px);
+        padding: 2rem;
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -29,9 +50,7 @@ function Perfil() {
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    // Aquí va la lógica para enviar los datos al backend
     console.log('Datos actualizados:', formData);
-    // Simulamos el cambio en el estado local (opcional)
     setUser({ ...user, ...formData });
     localStorage.setItem('user', JSON.stringify({ ...user, ...formData }));
   };
@@ -52,21 +71,19 @@ function Perfil() {
     >
       <div className="flex-grow-1 d-flex justify-content-center align-items-center">
         <div
-          className="card p-4 shadow-lg text-center"
+          className="fade-in-green text-center"
           style={{
             maxWidth: '500px',
             width: '90%',
-            backgroundColor: 'rgba(255,255,255,0.95)',
           }}
         >
-          <h2 className="mb-4">Perfil</h2>
+          <h2 className="mb-4 text-success fw-bold">Perfil</h2>
           <p><strong>Nombre:</strong> {user.firstName} {user.lastName}</p>
           <p><strong>Email:</strong> {user.email}</p>
           <p><strong>Tipo de Usuario:</strong> {user.type}</p>
 
-          {/* Botón para abrir modal */}
           <button
-            className="btn btn-primary mt-3"
+            className="btn btn-success mt-3"
             data-bs-toggle="modal"
             data-bs-target="#editarPerfilModal"
           >
@@ -75,7 +92,6 @@ function Perfil() {
         </div>
       </div>
 
-      {/* Footer */}
       <footer
         className="text-center py-3 border-top"
         style={{
@@ -88,7 +104,6 @@ function Perfil() {
         </small>
       </footer>
 
-      {/* Modal Bootstrap */}
       <div
         className="modal fade"
         id="editarPerfilModal"

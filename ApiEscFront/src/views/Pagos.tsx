@@ -35,6 +35,27 @@ interface Carreras {
 }
 
 const Pagos: React.FC = () => {
+  // Inyectar estilos una sola vez al montar
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes slideFadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .fade-in-green {
+        animation: slideFadeIn 0.6s ease-out forwards;
+        border: 2px solid #3ab397;
+        border-radius: 15px;
+        background-color: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+
   const BACKEND_IP = "localhost";
   const BACKEND_PORT = "8000";
   const [pagos, setPagos] = useState<Pago[]>([]);
@@ -61,39 +82,25 @@ const Pagos: React.FC = () => {
 
   useEffect(() => {
     if (tipoUsuario === 'Admin') {
-      //Fetch pagos
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/todos`, {
-        method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
       })
         .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) setPagos(data);
-          else setError("Los datos recibidos no son válidos.");
-        })
+        .then(data => Array.isArray(data) ? setPagos(data) : setError("Datos inválidos"))
         .catch(() => setError('No se pudieron cargar los pagos.'));
-      //Fetch alumnos
+
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/users/all`, {
-        method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
       })
         .then(res => res.json())
-        .then(data => {
-          const alumnos = data.filter((u: Usuario) => u.userdetail?.type === 'Alumno');
-          setAlumnos(alumnos);
-        })
+        .then(data => setAlumnos(data.filter((u: Usuario) => u.userdetail?.type === 'Alumno')))
         .catch(() => setError('No se pudieron cargar los alumnos.'));
-      //Fetch carreras
+
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/todas`, {
-        method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
       })
         .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {setCarreras(data);
-          }
-          else setError("Los datos recibidos no son válidos.");
-        })
+        .then(data => Array.isArray(data) ? setCarreras(data) : setError("Datos inválidos"))
         .catch(() => setError('No se pudieron cargar las carreras.'));
     }
   }, [tipoUsuario]);
@@ -137,10 +144,8 @@ const Pagos: React.FC = () => {
       });
   };
 
-  // Funcion eliminar pagos
   const eliminarPago = (id: number) => {
     if (!window.confirm('¿Eliminar este pago?')) return;
-
     fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/eliminarPago/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
@@ -152,7 +157,6 @@ const Pagos: React.FC = () => {
       .catch(() => setError('Error al eliminar el pago.'));
   };
 
-  // Funcion editar pagos
   const editarPago = (pago: Pago) => {
     fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/editarPago/${pago.id}`, {
       method: 'PUT',
@@ -178,67 +182,69 @@ const Pagos: React.FC = () => {
 
   return (
     <div className="container mt-5">
-      <h2 className="mb-4 text-center">Gestión de Pagos</h2>
+      <div className="fade-in-green">
+        <h2 className="mb-4 text-center text-success">Gestión de Pagos</h2>
 
-      {mensaje && <div className="alert alert-success">{mensaje}</div>}
-      {error && <div className="alert alert-danger">{error}</div>}
+        {mensaje && <div className="alert alert-success">{mensaje}</div>}
+        {error && <div className="alert alert-danger">{error}</div>}
 
-      <div className="card mb-4">
-        <div className="card-header">Nuevo Pago</div>
-        <div className="card-body row g-3">
-          <div className="col-md-3">
-            <select
-              className="form-select"
-              name="user_id"
-              value={nuevoPago.user_id}
-              onChange={handleInputChange}
-            >
-              <option value={0}>Seleccionar alumno</option>
-              {alumnos.map(alumno => (
-                <option key={alumno.id} value={alumno.id}>
-                  {alumno.userdetail.firstName} {alumno.userdetail.lastName}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-3">
-            <select
-              className="form-select"
-              name="carrera_id"
-              value={nuevoPago.carrera_id}
-              onChange={handleInputChange}
-            >
-              <option value={0}>Seleccionar carrera</option>
-              {carreras.map(carrera => (
-                <option key={carrera.id} value={carrera.id}>
-                  {carrera.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-1">
-            <input
-              type="input"
-              name="monto"
-              className="form-control"
-              placeholder="Monto"
-              value={nuevoPago.monto}
-              onChange={handleInputChange}
-            />
-          </div>
-          <div className="col-md-3">
-            <input
-              type="date"
-              name="mes"
-              className="form-control"
-              value={nuevoPago.mes}
-              onChange={handleInputChange}
-            />
-          </div>
-          <div className="col-md-2 d-grid">
-            <button className="btn btn-success" onClick={crearPago}>
-              Registrar
-            </button>
+        <div className="card mb-4">
+          <div className="card-header">Nuevo Pago</div>
+          <div className="card-body row g-3">
+            <div className="col-md-3">
+              <select
+                className="form-select"
+                name="user_id"
+                value={nuevoPago.user_id}
+                onChange={handleInputChange}
+              >
+                <option value={0}>Seleccionar alumno</option>
+                {alumnos.map(alumno => (
+                  <option key={alumno.id} value={alumno.id}>
+                    {alumno.userdetail.firstName} {alumno.userdetail.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-3">
+              <select
+                className="form-select"
+                name="carrera_id"
+                value={nuevoPago.carrera_id}
+                onChange={handleInputChange}
+              >
+                <option value={0}>Seleccionar carrera</option>
+                {carreras.map(carrera => (
+                  <option key={carrera.id} value={carrera.id}>
+                    {carrera.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-1">
+              <input
+                type="number"
+                name="monto"
+                className="form-control"
+                placeholder="Monto"
+                value={nuevoPago.monto}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="col-md-3">
+              <input
+                type="date"
+                name="mes"
+                className="form-control"
+                value={nuevoPago.mes}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="col-md-2 d-grid">
+              <button className="btn btn-success" onClick={crearPago}>
+                Registrar
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -263,14 +269,13 @@ const Pagos: React.FC = () => {
                   <td>{p.id}</td>
                   <td>
                     {(() => {
-                              const user = alumnos.find(a => a.id === p.user_id);
-                              return user
-                              ? `${user.userdetail.firstName} ${user.userdetail.lastName}`
-                              : `ID: ${p.user_id}`;
-                            }
-                    )()}
+                      const user = alumnos.find(a => a.id === p.user_id);
+                      return user
+                        ? `${user.userdetail.firstName} ${user.userdetail.lastName}`
+                        : `ID: ${p.user_id}`;
+                    })()}
                   </td>
-                  <td>{carreras.find(c=> c.id === p.carrera_id)?.nombre || `ID: ${p.carrera_id}`}</td>
+                  <td>{carreras.find(c => c.id === p.carrera_id)?.nombre || `ID: ${p.carrera_id}`}</td>
                   <td>{p.monto}</td>
                   <td>{p.mes}</td>
                   <td>

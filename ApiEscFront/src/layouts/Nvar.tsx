@@ -29,9 +29,6 @@ function Nvar() {
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto">
             <li className="nav-item">
-              <NavLink className="nav-link" to="/contactos">Contactos</NavLink>
-            </li>
-            <li className="nav-item">
               <NavLink className="nav-link" to="/perfil">Perfil</NavLink>
             </li>
             <li className="nav-item">
@@ -43,11 +40,17 @@ function Nvar() {
               </li>
             )}
             {tipoUsuario === "Admin" && (
-              <><li className="nav-item">
-                <NavLink className="nav-link" to="/pagos">Pagos</NavLink>
-              </li><li className="nav-item">
+              <>
+                <li className="nav-item">
+                  <NavLink className="nav-link" to="/pagos">Pagos</NavLink>
+                </li>
+                <li className="nav-item">
                   <NavLink className="nav-link" to="/alumnos">Alumnos</NavLink>
-                </li></>
+                </li>
+                <li className="nav-item">
+                  <NavLink className="nav-link" to="/carreras">Carreras</NavLink>
+                </li>
+              </>
             )}
           </ul>
 
