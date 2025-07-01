@@ -5,7 +5,6 @@ import PublicRoute from './components/Routes/PublicRoute'
 import Login from './views/Login'
 import MainLayout from './layouts/MainLayaut'
 import Carreras from './views/Carreras'
-import MisPagos from './views/MisPagos';
 
 function App() {
   const Home = lazy(() => import('./views/Home'));
@@ -31,9 +30,7 @@ function App() {
             <Route path="/mis-pagos" element={<MisPagos />} />
             <Route path="/perfil" element={<Perfil />} />
             <Route path="/alumnos" element={<Alumnos />} />
-            <Route path="/Notificaciones" element={<Home />} />
             <Route path="/carreras" element={<Carreras/>} />
-            <Route path="/pagos" element={<MisPagos />} />
           </Route>
         </Route>
       </Routes>

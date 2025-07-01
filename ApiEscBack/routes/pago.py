@@ -121,4 +121,4 @@ def editar_pago_parcial(
         session.commit()
         return {"message": "Pago modificado parcialmente"}
     finally:
-        session.close()
+       session.close()

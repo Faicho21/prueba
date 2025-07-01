@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
+import Select from "react-select";
+import { motion, AnimatePresence } from "framer-motion";
+import { Navigate } from "react-router-dom";
 
 interface Pago {
   id: number;
@@ -35,29 +38,9 @@ interface Carreras {
 }
 
 const Pagos: React.FC = () => {
-  // Inyectar estilos una sola vez al montar
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = `
-      @keyframes slideFadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .fade-in-green {
-        animation: slideFadeIn 0.6s ease-out forwards;
-        border: 2px solid #3ab397;
-        border-radius: 15px;
-        background-color: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-      }
-    `;
-    document.head.appendChild(style);
-  }, []);
-
   const BACKEND_IP = "localhost";
   const BACKEND_PORT = "8000";
+  const token = localStorage.getItem("token");
 
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [alumnos, setAlumnos] = useState<Usuario[]>([]);
@@ -70,13 +53,10 @@ const Pagos: React.FC = () => {
     monto: 0,
     mes: "",
   });
-
   const [pagoSeleccionado, setPagoSeleccionado] = useState<Pago | null>(null);
   const [pagoOriginal, setPagoOriginal] = useState<Pago | null>(null);
   const [mostrarModal, setMostrarModal] = useState<boolean>(false);
   const [tipoUsuario, setTipoUsuario] = useState<string>("");
-
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
     if (token) {
@@ -90,27 +70,39 @@ const Pagos: React.FC = () => {
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/todos`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-        .then(res => res.json())
-        .then(data => Array.isArray(data) ? setPagos(data) : setError("Datos inválidos"))
-        .catch(() => setError('No se pudieron cargar los pagos.'));
+        .then((res) => res.json())
+        .then((data) => setPagos(Array.isArray(data) ? data : []))
+        .catch(() => setError("No se pudieron cargar los pagos."));
 
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/users/all`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-        .then(res => res.json())
-        .then(data => setAlumnos(data.filter((u: Usuario) => u.userdetail?.type === 'Alumno')))
-        .catch(() => setError('No se pudieron cargar los alumnos.'));
+        .then((res) => res.json())
+        .then((data) => {
+          const alumnosFiltrados = data.filter(
+            (u: Usuario) => u.userdetail?.type === "Alumno"
+          );
+          setAlumnos(alumnosFiltrados);
+        })
+        .catch(() => setError("No se pudieron cargar los alumnos."));
 
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/todas`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-        .then(res => res.json())
-        .then(data => Array.isArray(data) ? setCarreras(data) : setError("Datos inválidos"))
-        .catch(() => setError('No se pudieron cargar las carreras.'));
+        .then((res) => res.json())
+        .then((data) => setCarreras(Array.isArray(data) ? data : []))
+        .catch(() => setError("No se pudieron cargar las carreras."));
     }
   }, [tipoUsuario]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const opcionesAlumnos = alumnos.map((alumno) => ({
+    value: alumno.id,
+    label: `${alumno.userdetail.firstName} ${alumno.userdetail.lastName}`,
+  }));
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     const parsedValue = ["user_id", "carrera_id", "monto"].includes(name)
       ? Number(value)
@@ -122,12 +114,7 @@ const Pagos: React.FC = () => {
     setError(null);
     setMensaje(null);
 
-    if (
-      !nuevoPago.user_id ||
-      !nuevoPago.carrera_id ||
-      !nuevoPago.monto ||
-      !nuevoPago.mes
-    ) {
+    if (!nuevoPago.user_id || !nuevoPago.carrera_id || !nuevoPago.monto || !nuevoPago.mes) {
       setError("Todos los campos son obligatorios.");
       return;
     }
@@ -157,7 +144,7 @@ const Pagos: React.FC = () => {
   };
 
   const eliminarPago = (id: number) => {
-    if (!window.confirm('¿Eliminar este pago?')) return;
+    if (!window.confirm("¿Eliminar este pago?")) return;
     fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/eliminarPago/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
@@ -209,17 +196,14 @@ const Pagos: React.FC = () => {
       return;
     }
 
-    fetch(
-      `http://${BACKEND_IP}:${BACKEND_PORT}/editarPago/${pagoSeleccionado.id}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(camposEditados),
-      }
-    )
+    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/editarPago/${pagoSeleccionado.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(camposEditados),
+    })
       .then((res) => {
         if (!res.ok) throw new Error("Error al editar el pago.");
         setMensaje("Pago editado correctamente.");
@@ -233,81 +217,86 @@ const Pagos: React.FC = () => {
       .catch(() => setError("Error al editar el pago."));
   };
 
-  if (tipoUsuario !== "Admin") {
-    return (
-      <div className="container mt-5">
-        <div className="alert alert-danger text-center">
-          No tienes permiso para acceder a esta sección.
-        </div>
-      </div>
-    );
-  }
 
-  return (
+ return (
     <div className="container mt-5">
-      <div className="fade-in-green">
-        <h2 className="mb-4 text-center text-success">Gestión de Pagos</h2>
+      <motion.div
+        className="p-4 mb-4 bg-success bg-opacity-10 border-start border-4 border-success rounded shadow-sm"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <h2 className="text-success m-0 text-center">Gestión de Pagos</h2>
+      </motion.div>
 
-        {mensaje && <div className="alert alert-success">{mensaje}</div>}
-        {error && <div className="alert alert-danger">{error}</div>}
+      {mensaje && <div className="alert alert-success">{mensaje}</div>}
+      {error && <div className="alert alert-danger">{error}</div>}
 
-        <div className="card mb-4">
-          <div className="card-header">Nuevo Pago</div>
-          <div className="card-body row g-3">
-            <div className="col-md-3">
-              <select
-                className="form-select"
-                name="user_id"
-                value={nuevoPago.user_id}
-                onChange={handleInputChange}
-              >
-                <option value={0}>Seleccionar alumno</option>
-                {alumnos.map(alumno => (
-                  <option key={alumno.id} value={alumno.id}>
-                    {alumno.userdetail.firstName} {alumno.userdetail.lastName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-3">
-              <select
-                className="form-select"
-                name="carrera_id"
-                value={nuevoPago.carrera_id}
-                onChange={handleInputChange}
-              >
-                <option value={0}>Seleccionar carrera</option>
-                {carreras.map(carrera => (
-                  <option key={carrera.id} value={carrera.id}>
-                    {carrera.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-1">
-              <input
-                type="number"
-                name="monto"
-                className="form-control"
-                placeholder="Monto"
-                value={nuevoPago.monto}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="col-md-3">
-              <input
-                type="date"
-                name="mes"
-                className="form-control"
-                value={nuevoPago.mes}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="col-md-2 d-grid">
-              <button className="btn btn-success" onClick={crearPago}>
-                Registrar
-              </button>
-            </div>
+      <div className="card mb-4">
+        <div className="card-header">Nuevo Pago</div>
+        <div className="card-body row g-3">
+          <div className="col-md-4">
+            <Select
+              options={opcionesAlumnos}
+              placeholder="Buscar alumno..."
+              onChange={(selectedOption) =>
+                setNuevoPago({
+                  ...nuevoPago,
+                  user_id: selectedOption?.value || 0,
+                })
+              }
+              value={
+                opcionesAlumnos.find(
+                  (opt) => opt.value === nuevoPago.user_id
+                ) || null
+              }
+              isClearable
+            />
+          </div>
+
+          <div className="col-md-3">
+            <select
+              className="form-select"
+              name="carrera_id"
+              value={nuevoPago.carrera_id}
+              onChange={handleInputChange}
+            >
+              <option value={0}>Seleccionar carrera</option>
+              {carreras.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-md-1">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              name="monto"
+              className="form-control"
+              placeholder="MONTO"
+              value={nuevoPago.monto === 0 ? "" : nuevoPago.monto}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="col-md-3">
+            <input
+              type="date"
+              name="mes"
+              className="form-control"
+              value={nuevoPago.mes}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="col-md-1 d-grid">
+            <button className="btn btn-success" onClick={crearPago}>
+              Registrar
+            </button>
           </div>
         </div>
       </div>
@@ -457,4 +446,4 @@ const Pagos: React.FC = () => {
   );
 };
 
-export default Pagos;
+export default Pagos;
