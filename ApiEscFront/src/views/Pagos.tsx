@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
-import { motion, AnimatePresence } from "framer-motion"; // 👈 Import de framer-motion
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Pago {
   id: number;
@@ -53,6 +53,7 @@ const Pagos: React.FC = () => {
   });
 
   const [pagoSeleccionado, setPagoSeleccionado] = useState<Pago | null>(null);
+  const [pagoOriginal, setPagoOriginal] = useState<Pago | null>(null);
   const [mostrarModal, setMostrarModal] = useState<boolean>(false);
   const [tipoUsuario, setTipoUsuario] = useState<string>("");
 
@@ -68,7 +69,6 @@ const Pagos: React.FC = () => {
   useEffect(() => {
     if (tipoUsuario === "Admin") {
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/todos`, {
-        method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -76,7 +76,6 @@ const Pagos: React.FC = () => {
         .catch(() => setError("No se pudieron cargar los pagos."));
 
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/users/all`, {
-        method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -89,7 +88,6 @@ const Pagos: React.FC = () => {
         .catch(() => setError("No se pudieron cargar los alumnos."));
 
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/todas`, {
-        method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -167,6 +165,7 @@ const Pagos: React.FC = () => {
 
   const abrirModalEdicion = (pago: Pago) => {
     setPagoSeleccionado({ ...pago });
+    setPagoOriginal({ ...pago });
     setMostrarModal(true);
   };
 
@@ -182,20 +181,41 @@ const Pagos: React.FC = () => {
   };
 
   const guardarEdicionPago = () => {
-    if (!pagoSeleccionado) return;
+    if (!pagoSeleccionado || !pagoOriginal) return;
+
+    const camposEditados: Partial<NuevoPago> = {};
+
+    if (pagoSeleccionado.user_id !== pagoOriginal.user_id)
+      camposEditados.user_id = pagoSeleccionado.user_id;
+
+    if (pagoSeleccionado.carrera_id !== pagoOriginal.carrera_id)
+      camposEditados.carrera_id = pagoSeleccionado.carrera_id;
+
+    if (pagoSeleccionado.monto !== pagoOriginal.monto)
+      camposEditados.monto = pagoSeleccionado.monto;
+
+    if (pagoSeleccionado.mes !== pagoOriginal.mes)
+      camposEditados.mes = pagoSeleccionado.mes;
+
+    if (Object.keys(camposEditados).length === 0) {
+      setMensaje("No se realizaron cambios.");
+      setMostrarModal(false);
+      return;
+    }
 
     fetch(
       `http://${BACKEND_IP}:${BACKEND_PORT}/editarPago/${pagoSeleccionado.id}`,
       {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(pagoSeleccionado),
+        body: JSON.stringify(camposEditados),
       }
     )
-      .then(() => {
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al editar el pago.");
         setMensaje("Pago editado correctamente.");
         setMostrarModal(false);
         return fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/todos`, {
@@ -268,19 +288,19 @@ const Pagos: React.FC = () => {
               ))}
             </select>
           </div>
-          
-              <div className="col-md-1">
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                name="monto"
-                className="form-control"
-                placeholder="MONTO"
-                value={nuevoPago.monto === 0 ? '' : nuevoPago.monto}
-                onChange={handleInputChange}
-              />
-            </div>
+
+          <div className="col-md-1">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              name="monto"
+              className="form-control"
+              placeholder="MONTO"
+              value={nuevoPago.monto === 0 ? "" : nuevoPago.monto}
+              onChange={handleInputChange}
+            />
+          </div>
 
           <div className="col-md-3">
             <input
@@ -355,7 +375,6 @@ const Pagos: React.FC = () => {
         </table>
       </div>
 
-      {/* ✅ Modal con animación */}
       <AnimatePresence>
         {mostrarModal && pagoSeleccionado && (
           <motion.div
@@ -397,26 +416,20 @@ const Pagos: React.FC = () => {
                     inputMode="numeric"
                     pattern="[0-9]*"
                     name="monto"
-                    className="form-control"
+                    className="form-control mt-2"
                     placeholder="Monto"
-                    value={nuevoPago.monto === 0 ? "" : nuevoPago.monto}
-                    onChange={(e) => {
-                      const valor = e.target.value;
-                      if (/^\d*$/.test(valor)) {
-                        setNuevoPago({ ...nuevoPago, monto: Number(valor) });
-                      }
-                    }}
+                    value={pagoSeleccionado.monto}
+                    onChange={handleEditarPagoChange}
                   />
-
                   <input
                     type="date"
-                    className="form-control mb-2"
+                    className="form-control mt-2"
                     name="mes"
                     value={pagoSeleccionado.mes}
                     onChange={handleEditarPagoChange}
                   />
                   <select
-                    className="form-select"
+                    className="form-select mt-2"
                     name="carrera_id"
                     value={pagoSeleccionado.carrera_id}
                     onChange={handleEditarPagoChange}

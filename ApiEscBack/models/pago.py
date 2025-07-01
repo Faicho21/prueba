@@ -2,6 +2,7 @@ from config.db import engine, Base
 from sqlalchemy import Integer, ForeignKey, DateTime, Column
 from sqlalchemy.orm import sessionmaker, relationship
 from pydantic import BaseModel
+from typing import Optional
 import datetime
 
 class Pago(Base):
@@ -37,6 +38,12 @@ class VerPagos(BaseModel):
     monto: int
     mes: datetime.datetime
     creado_en: datetime.datetime
+
+class EditarPago(BaseModel):
+    user_id: Optional[int] = None
+    carrera_id: Optional[int] = None
+    monto: Optional[float] = None
+    mes: Optional[str] = None
 
 class PagoOut(BaseModel): # Modelo de salida para Pago
     id: int

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
 from typing import List
 from auth.seguridad import obtener_usuario_desde_token
-from models.pago import Pago, NuevoPago, session, PagoOut
+from models.pago import Pago, NuevoPago, session, PagoOut, EditarPago
 from models.user import User
 from auth.seguridad import Seguridad
 from fastapi.responses import JSONResponse
@@ -36,6 +36,7 @@ def nuevo_pago(pago: NuevoPago, payload: dict = Depends(obtener_usuario_desde_to
 
 @pago.delete("/eliminarPago/{pago_id}") # Ruta protegida para que el ADMIN elimine un pago
 def eliminar_pago(pago_id: int, payload: dict = Depends(obtener_usuario_desde_token)):
+    
     if payload["type"] != "Admin":
         raise JSONResponse(status_code=403, detail="Solo el administrador puede eliminar pagos")
 
@@ -69,7 +70,7 @@ def modificar_pago(pago_id: int, pago: NuevoPago, payload: dict = Depends(obtene
         return {"message": "Pago modificado correctamente"}
     finally:
         session.close()
-        
+
 @pago.get("/pago/todos", response_model=List[PagoOut])       #para que el ADMIN vea TODOS los pagos
 def ver_todos_los_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
     if payload["type"] not in ["Admin"]:
@@ -91,5 +92,33 @@ def ver_mis_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
         if user:
             return user.pago
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    finally:
+        session.close()
+
+@pago.patch("/editarPago/{pago_id}")  # Ruta protegida para modificación parcial
+def editar_pago_parcial(
+    pago_id: int,
+    datos_actualizados: EditarPago,
+    payload: dict = Depends(obtener_usuario_desde_token)
+):
+    if payload["type"] != "Admin":
+        return JSONResponse(status_code=403, content={"message": "Solo el administrador puede modificar pagos"})
+
+    try:
+        pago_existente = session.query(Pago).filter_by(id=pago_id).first()
+        if not pago_existente:
+            return JSONResponse(status_code=404, content={"message": "Pago no encontrado"})
+
+        if datos_actualizados.user_id is not None:
+            pago_existente.user_id = datos_actualizados.user_id
+        if datos_actualizados.carrera_id is not None:
+            pago_existente.carrera_id = datos_actualizados.carrera_id
+        if datos_actualizados.monto is not None:
+            pago_existente.monto = datos_actualizados.monto
+        if datos_actualizados.mes is not None:
+            pago_existente.mes = datos_actualizados.mes
+
+        session.commit()
+        return {"message": "Pago modificado parcialmente"}
     finally:
         session.close()
