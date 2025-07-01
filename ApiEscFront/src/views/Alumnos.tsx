@@ -28,6 +28,9 @@ function Alumnos() {
 
   const [alumnos, setAlumnos] = useState<Usuario[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [modoEditar, setModoEditar] = useState(false);
+  const [usuarioEditandoId, setUsuarioEditandoId] = useState<number | null>(null);
+
   const [nuevoUsuario, setNuevoUsuario] = useState<NuevoUsuario>({
     username: '',
     password: '',
@@ -41,7 +44,6 @@ function Alumnos() {
   const token = localStorage.getItem('token');
   const [tipoUsuario, setTipoUsuario] = useState<string>('');
 
-  // Animación
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -60,7 +62,7 @@ function Alumnos() {
     }
   }, [token]);
 
-  useEffect(() => {
+  const fetchAlumnos = () => {
     fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/users/all`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -73,7 +75,9 @@ function Alumnos() {
         }
       })
       .catch(error => console.error("Error al obtener los alumnos:", error));
-  }, [tipoUsuario]);
+  };
+
+  useEffect(fetchAlumnos, [tipoUsuario]);
 
   const eliminarUsuario = (id: number) => {
     if (!window.confirm('¿Eliminar este usuario?')) return;
@@ -93,7 +97,21 @@ function Alumnos() {
   };
 
   const editarUsuario = (id: number) => {
-    console.log(`Editar usuario con ID: ${id}`);
+    const alumno = alumnos.find(a => a.id === id);
+    if (!alumno) return;
+
+    setNuevoUsuario({
+      username: alumno.username,
+      password: '',
+      email: alumno.userdetail.email,
+      dni: alumno.userdetail.dni,
+      firstName: alumno.userdetail.firstName,
+      lastName: alumno.userdetail.lastName,
+      type: alumno.userdetail.type,
+    });
+    setModoEditar(true);
+    setUsuarioEditandoId(id);
+    setShowModal(true);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -123,15 +141,36 @@ function Alumnos() {
           lastName: '',
           type: 'Alumno',
         });
-        return fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/users/all`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        fetchAlumnos();
       })
-      .then(res => res.json())
-      .then(data => setAlumnos(data))
       .catch(error => {
         console.error("Error al crear el usuario:", error);
         alert('Error al crear el usuario');
+      });
+  };
+
+  const actualizarUsuario = () => {
+    if (usuarioEditandoId === null) return;
+
+    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/users/${usuarioEditandoId}/details`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(nuevoUsuario),
+    })
+      .then(res => {
+        if (!res.ok) throw res;
+        alert('Usuario actualizado correctamente');
+        setShowModal(false);
+        setModoEditar(false);
+        setUsuarioEditandoId(null);
+        fetchAlumnos();
+      })
+      .catch(error => {
+        console.error("Error al actualizar el usuario:", error);
+        alert('Error al actualizar el usuario');
       });
   };
 
@@ -170,61 +209,60 @@ function Alumnos() {
         </tbody>
       </table>
 
-      {/* Botón flotante */}
       <button
         className="btn btn-success"
         style={{
           position: 'fixed',
           bottom: '2rem',
           right: '2rem',
-          borderRadius: '50%',
-          width: '60px',
-          height: '60px',
-          fontSize: '34px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          borderRadius: '8px',
+          fontSize: '16px',
+          padding: '10px 20px',
           backgroundColor: 'green',
           color: 'white',
           border: 'none',
           zIndex: 1050
         }}
-        onClick={() => setShowModal(true)}
+        onClick={() => {
+          setShowModal(true);
+          setModoEditar(false);
+          setNuevoUsuario({
+            username: '',
+            password: '',
+            email: '',
+            dni: 0,
+            firstName: '',
+            lastName: '',
+            type: 'Alumno',
+          });
+        }}
       >
-        +
+        Agregar Usuario
       </button>
 
-      {/* Modal */}
       {showModal && (
-        <div
-          className="modal fade show"
-          tabIndex={-1}
-          role="dialog"
-          style={{
-            display: 'block',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-          }}
-        >
+        <div className="modal fade show" tabIndex={-1} role="dialog" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog" role="document">
-            <div
-              className="modal-content"
-              style={{
-                animation: 'fadeInModal 0.4s ease-out',
-                border: '2px solid #3ab397',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(6px)',
-                borderRadius: '15px',
-              }}
-            >
+            <div className="modal-content" style={{
+              animation: 'fadeInModal 0.4s ease-out',
+              border: '2px solid #3ab397',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(6px)',
+              borderRadius: '15px',
+            }}>
               <div className="modal-header">
-                <h5 className="modal-title">Nuevo Usuario</h5>
+                <h5 className="modal-title">{modoEditar ? 'Editar Usuario' : 'Nuevo Usuario'}</h5>
                 <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
               </div>
               <div className="modal-body">
                 <label className="form-label">USUARIO</label>
-                <input className="form-control mb-2" name="username" placeholder="Username" value={nuevoUsuario.username} onChange={handleChange} />
-                <label className="form-label">CONTRASEÑA</label>
-                <input className="form-control mb-2" name="password" type="password" placeholder="Password" value={nuevoUsuario.password} onChange={handleChange} />
+                <input className="form-control mb-2" name="username" placeholder="Username" value={nuevoUsuario.username} onChange={handleChange} disabled={modoEditar} />
+                {!modoEditar && (
+                  <>
+                    <label className="form-label">CONTRASEÑA</label>
+                    <input className="form-control mb-2" name="password" type="password" placeholder="Password" value={nuevoUsuario.password} onChange={handleChange} />
+                  </>
+                )}
                 <label className="form-label">EMAIL</label>
                 <input className="form-control mb-2" name="email" placeholder="Email" value={nuevoUsuario.email} onChange={handleChange} />
                 <label className="form-label">DNI</label>
@@ -241,7 +279,9 @@ function Alumnos() {
               </div>
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
-                <button className="btn btn-primary" onClick={crearUsuario}>Crear</button>
+                <button className="btn btn-primary" onClick={modoEditar ? actualizarUsuario : crearUsuario}>
+                  {modoEditar ? 'Actualizar' : 'Crear'}
+                </button>
               </div>
             </div>
           </div>
