@@ -13,8 +13,13 @@ function Nvar() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      setTipoUsuario(payload.type);
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setTipoUsuario(payload.type?.toLowerCase()); // Convertido a minúsculas
+      } catch (error) {
+        console.error("Token inválido", error);
+        setTipoUsuario(null);
+      }
     }
   }, []);
 
@@ -34,12 +39,14 @@ function Nvar() {
             <li className="nav-item">
               <NavLink className="nav-link" to="/notificaciones">Notificaciones</NavLink>
             </li>
-            {tipoUsuario !== "Admin" && (
+
+            {tipoUsuario === "alumno" && (
               <li className="nav-item">
                 <NavLink className="nav-link" to="/pagos">Mis pagos</NavLink>
               </li>
             )}
-            {tipoUsuario === "Admin" && (
+
+            {tipoUsuario === "admin" && (
               <>
                 <li className="nav-item">
                   <NavLink className="nav-link" to="/pagos">Pagos</NavLink>
