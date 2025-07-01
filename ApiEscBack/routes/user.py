@@ -314,19 +314,19 @@ def login_user(us: InputLogin):
     try:
         user = session.query(User).filter(User.username == us.username).first()
         if not user:
-          raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+          raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario Incorrecto")
        
         if not user.password == us.password: 
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Contraseña Incorrecta")
       
         token = Seguridad.generar_token(user)
         if not token:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Error de generación de token!")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Error de generación de token!") #
         
         res_content = {
             "status": "success",
             "token": token,
-            "user": UserDetailOut.from_orm(user.userdetail) if user.userdetail else None, 
+            "user": UserDetailOut.from_orm(user.userdetail).dict() if user.userdetail else None, 
             "message": "User logged in successfully!",
         }
         return JSONResponse(status_code=status.HTTP_200_OK, content=res_content)

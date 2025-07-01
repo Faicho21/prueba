@@ -27,10 +27,10 @@ function Login() {
     if (dataObject.status === "success"){
       localStorage.setItem("token", dataObject.token ?? ""); 
       localStorage.setItem("user", JSON.stringify(dataObject.user));
-      setMessage("Initiating session...");
+      setMessage("Iniciando Sesion...");
       navigate("/home");
     } else {
-      setMessage(dataObject.message ?? "Unknown error");
+      setMessage(dataObject.message || (dataObject as any).detail || "Error desconocido en el login.");
     }
   }
 

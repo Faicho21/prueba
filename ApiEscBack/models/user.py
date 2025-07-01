@@ -55,10 +55,15 @@ class InputUser(BaseModel):
    firstName: str
    lastName: str
    type: str
+   class Config:
+        from_attributes = True
    
 class InputLogin(BaseModel):
     username: str
     password: str
+    class Config:
+        from_attributes = True
+    
 
 class InputUserDetail(BaseModel):
    dni: int
@@ -66,6 +71,8 @@ class InputUserDetail(BaseModel):
    lastName: str
    type: str
    email: str
+   class Config:
+        from_attributes = True
 
 class UserDetailUpdate(BaseModel):
     dni: Optional[int] = None
@@ -73,11 +80,15 @@ class UserDetailUpdate(BaseModel):
     lastName: Optional[str] = None
     type: Optional[str] = None  # "alumno", "profesor", etc.
     email: Optional[str]  = None
+    class Config:
+        from_attributes = True
 
 class InputRegister(BaseModel):
    username: str
    password: str
    email: str
+   class Config:
+        from_attributes = True
        
 class UserDetailOut(BaseModel):
     email: str
@@ -87,15 +98,14 @@ class UserDetailOut(BaseModel):
     type: str
 
     class Config:
-        orm_mode = True
-
+        from_attributes = True
 class UserOut(BaseModel):
     id: int
     username: str
     userdetail: UserDetailOut  # 👈 Anidado
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 #endregion
 
