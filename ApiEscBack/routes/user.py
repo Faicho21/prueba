@@ -14,7 +14,7 @@ user = APIRouter()
 userDetail = APIRouter()
 
 
-# Pruba
+# Actualizar detalles de un usuario
 @user.patch("/users/{user_id}/details", response_model=dict)
 def actualizar_parcial_userdetail(
     user_id: int,
@@ -55,7 +55,7 @@ def actualizar_parcial_userdetail(
     finally:
         session.close()
 
-# prueba
+# Crear un nuevo usuario
 @user.post("/users/register")
 def crear_usuario(user: InputRegister, payload: dict = Depends(obtener_usuario_desde_token)):
     if payload["type"] not in ["Admin"]:

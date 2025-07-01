@@ -9,4 +9,5 @@ function PublicRoute() {
 
   return <Outlet />;
 }
+
 export default PublicRoute;
