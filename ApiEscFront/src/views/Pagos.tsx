@@ -1,3 +1,4 @@
+// ...imports...
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import { motion, AnimatePresence } from "framer-motion";
@@ -95,6 +96,14 @@ const Pagos: React.FC = () => {
         .catch(() => setError("No se pudieron cargar las carreras."));
     }
   }, [tipoUsuario]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMensaje(null);
+      setError(null);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [mensaje, error]);
 
   const opcionesAlumnos = alumnos.map((alumno) => ({
     value: alumno.id,
@@ -240,7 +249,8 @@ const Pagos: React.FC = () => {
   return (
     <div className="container mt-5">
       <motion.div
-        className="p-4 mb-4 bg-success bg-opacity-10 border-start border-4 border-success rounded shadow-sm"
+        className="py-2 px-4 mb-4 bg-success bg-opacity-10 border-start border-4 border-success rounded shadow-sm mx-auto"
+        style={{ maxWidth: "50%" }}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -252,8 +262,9 @@ const Pagos: React.FC = () => {
       {error && <div className="alert alert-danger">{error}</div>}
 
       <div className="card mb-4">
-        <div className="card-header">Nuevo Pago</div>
+        <div className="card-header fw-bold bg-light">Nuevo Pago</div>
         <div className="card-body row g-3">
+          {/* Select de alumnos */}
           <div className="col-md-4">
             <Select
               options={opcionesAlumnos}
@@ -273,6 +284,7 @@ const Pagos: React.FC = () => {
             />
           </div>
 
+          {/* Select de carrera */}
           <div className="col-md-3">
             <select
               className="form-select"
@@ -313,7 +325,10 @@ const Pagos: React.FC = () => {
           </div>
 
           <div className="col-md-1 d-grid">
-            <button className="btn btn-success" onClick={crearPago}>
+            <button
+              className="btn btn-sm text-success border border-success bg-transparent hover:bg-success hover:text-white"
+              onClick={crearPago}
+            >
               Registrar
             </button>
           </div>
@@ -323,14 +338,14 @@ const Pagos: React.FC = () => {
       <h4>Pagos Registrados</h4>
       <div className="table-responsive">
         <table className="table table-striped table-hover">
-          <thead className="table-light">
+          <thead className="bg-light fw-bold">
             <tr>
-              <th>ID</th>
-              <th>Usuario</th>
-              <th>Carrera</th>
-              <th>Monto</th>
-              <th>Mes</th>
-              <th>Acciones</th>
+              <th className="fw-bold">ID</th>
+              <th className="fw-bold">Usuario</th>
+              <th className="fw-bold">Carrera</th>
+              <th className="fw-bold">Monto</th>
+              <th className="fw-bold">Mes</th>
+              <th className="fw-bold">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -350,13 +365,13 @@ const Pagos: React.FC = () => {
                   <td>{p.mes}</td>
                   <td>
                     <button
-                      className="btn btn-sm btn-primary me-2"
+                      className="btn btn-sm text-primary border border-primary bg-transparent hover:bg-primary hover:text-white me-2"
                       onClick={() => abrirModalEdicion(p)}
                     >
                       Editar
                     </button>
                     <button
-                      className="btn btn-sm btn-danger"
+                      className="btn btn-sm text-danger border border-danger bg-transparent hover:bg-danger hover:text-white"
                       onClick={() => eliminarPago(p.id)}
                     >
                       Eliminar
@@ -444,13 +459,13 @@ const Pagos: React.FC = () => {
                 </div>
                 <div className="modal-footer">
                   <button
-                    className="btn btn-secondary"
+                    className="btn btn-sm text-secondary border border-secondary bg-transparent hover:bg-secondary hover:text-white"
                     onClick={() => setMostrarModal(false)}
                   >
                     Cancelar
                   </button>
                   <button
-                    className="btn btn-primary"
+                    className="btn btn-sm text-primary border border-primary bg-transparent hover:bg-primary hover:text-white"
                     onClick={guardarEdicionPago}
                   >
                     Guardar Cambios

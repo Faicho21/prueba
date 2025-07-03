@@ -17,8 +17,7 @@ class User(Base):
    userdetail = relationship("UserDetail", backref="user", uselist=False)
    rmateria = relationship("Materia", back_populates="usuario", uselist=True)
    pago = relationship("Pago", back_populates="user", uselist=True)
-   pivoteCarrera = relationship("UsuarioCarrera", back_populates="user")
-   
+   carreras_asociadas = relationship("UsuarioCarrera", back_populates="user")
 
    def __init__(self,username,password):
        self.username = username
