@@ -1,43 +1,60 @@
-from fastapi import APIRouter
-from models.materia import Materia, InputMateria, session
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
+from models.materia import Materia, InputMateria, session
+from auth.seguridad import obtener_usuario_desde_token
 from sqlalchemy.orm import joinedload
+from typing import List
+from pydantic import BaseModel
 
 materia = APIRouter()
 
-@materia.post("/RMateria")
-def ingresar_materia(materia: InputMateria):
+# ------------------------
+# Crear materia (solo Admin o Profesor)
+@materia.post("/materias")
+def ingresar_materia(materia_data: InputMateria, payload: dict = Depends(obtener_usuario_desde_token)):
+    if payload["type"] not in ["Admin", "Profesor"]:
+        raise HTTPException(status_code=403, detail="No tienes permiso para registrar materias")
+
     try:
-        new_materia = Materia(materia.nombre, materia.estado, materia.user_id, materia.career_id)
+        new_materia = Materia(
+            materia_data.nombre,
+            materia_data.estado,
+            materia_data.user_id,
+            materia_data.career_id
+        )
         session.add(new_materia)
         session.commit()
-        return "materia agregada"
+        return {"message": "Materia agregada correctamente"}
     except Exception as e:
-       session.rollback()
-       print("Error inesperado:", e)
-       return JSONResponse(
-           status_code=500, content={"detail": "Error al agregar materia"}
-       )
+        session.rollback()
+        print("Error inesperado:", e)
+        return JSONResponse(status_code=500, content={"detail": "Error al agregar materia"})
     finally:
-       session.close()
+        session.close()
 
-@materia.get("/misMaterias")
-def consultar_materias():
+# ------------------------
+# Modelo de respuesta
+class MateriaOut(BaseModel):
+    id: int
+    nombre: str
+    estado: str
+    user_id: int
+    career_id: int
+
+    class Config:
+        orm_mode = True
+
+# Obtener todas las materias (solo Admin)
+@materia.get("/materias", response_model=List[MateriaOut])
+def consultar_materias(payload: dict = Depends(obtener_usuario_desde_token)):
+    if payload["type"] != "Admin":
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
     try:
         materias = session.query(Materia).options(joinedload(Materia.usuario)).all()
-        ver_materias = []
-        for materia in materias:
-            ver_materia = {
-                "id": materia.id,
-                "nombre": materia.nombre,
-                "estado": materia.estado,
-                "user_id": materia.user_id,
-                "career_id": materia.career_id,
-            }
-            ver_materias.append(ver_materia)
-        return JSONResponse(status_code=200, content=ver_materias)
+        return materias
     except Exception as e:
         print("Error al obtener materias:", e)
-        return JSONResponse(
-            status_code=500, content={"detail": "Error al obtener materias"}
-        ) 
+        raise HTTPException(status_code=500, detail="Error al obtener materias")
+    finally:
+        session.close()

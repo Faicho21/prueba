@@ -14,7 +14,7 @@ class Pago(Base):
     monto = Column(Integer)
     mes = Column(DateTime)
     creado_en = Column(DateTime, default=datetime.datetime.now)
-    
+
     user = relationship("User", uselist=False, back_populates="pago")
     carrera = relationship("Carrera", uselist=False)
 
@@ -31,6 +31,9 @@ class NuevoPago(BaseModel):
     mes: datetime.datetime
     creado_en: datetime.datetime = datetime.datetime.now()
 
+    class Config:
+        orm_mode = True
+
 class VerPagos(BaseModel):
     id: int
     carrera_id: int
@@ -39,11 +42,14 @@ class VerPagos(BaseModel):
     mes: datetime.datetime
     creado_en: datetime.datetime
 
+    class Config:
+        orm_mode = True
+
 class EditarPago(BaseModel):
     user_id: Optional[int] = None
     carrera_id: Optional[int] = None
     monto: Optional[float] = None
-    mes: Optional[str] = None
+    mes: Optional[datetime.datetime] = None  # ← corregido
 
 class PagoOut(BaseModel):
     id: int
@@ -52,7 +58,8 @@ class PagoOut(BaseModel):
     monto: int
     mes: datetime.datetime
 
-    model_config = ConfigDict(from_attributes=True)  # para Pydantic v2
+    model_config = ConfigDict(from_attributes=True)
 
+# Crear sesión
 Session = sessionmaker(bind=engine)
 session = Session()

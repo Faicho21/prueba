@@ -33,9 +33,7 @@ function Nvar() {
 
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto">
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/contactos">Contactos</NavLink>
-            </li>
+    
             <li className="nav-item">
               <NavLink className="nav-link" to="/perfil">Perfil</NavLink>
             </li>

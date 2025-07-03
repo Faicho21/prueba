@@ -2,17 +2,10 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Registro from "./Registro";
 
-type LoginProcessResponse = {
-  status: string;
-  token?: string;
-  user?: unknown;
-  message?: string;
-};
-
 function Login() {
   const BACKEND_IP = "localhost";
   const BACKEND_PORT = "8000";
-  const ENDPOINT = "users/login";
+  const ENDPOINT = "users/loginUser";
   const LOGIN_URL = `http://${BACKEND_IP}:${BACKEND_PORT}/${ENDPOINT}`;
   
   const navigate = useNavigate();
@@ -23,14 +16,37 @@ function Login() {
   const [message, setMessage] = useState<string | null>(null);
   const [showRegister, setShowRegister] = useState(false);
 
-  function loginProcess(dataObject: LoginProcessResponse) {
-    if (dataObject.status === "success"){
-      localStorage.setItem("token", dataObject.token ?? ""); 
-      localStorage.setItem("user", JSON.stringify(dataObject.user));
-      setMessage("Initiating session...");
-      navigate("/home");
+  // Decodificar el payload del token JWT
+  function parseJwt(token: string): any {
+    try {
+      return JSON.parse(atob(token.split(".")[1]));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function loginProcess(dataObject: any) {
+    if (dataObject.success) {
+      const token = dataObject.token;
+      localStorage.setItem("token", token);
+
+      const payload = parseJwt(token);
+      if (payload) {
+        localStorage.setItem("user", JSON.stringify(payload));
+        setMessage("Inicio de sesión exitoso...");
+
+        if (payload.type === "Admin") {
+          navigate("/dashboard");
+        } else if (payload.type === "Alumno") {
+          navigate("/perfil");
+        } else {
+          navigate("/home");
+        }
+      } else {
+        setMessage("Error al leer datos del token.");
+      }
     } else {
-      setMessage(dataObject.message ?? "Unknown error");
+      setMessage(dataObject.message ?? "Usuario o contraseña incorrectos.");
     }
   }
 
@@ -54,9 +70,13 @@ function Login() {
     fetch(LOGIN_URL, requestOptions)
       .then((respond) => respond.json())
       .then((dataObject) => loginProcess(dataObject))
-      .catch((error) => console.log("error", error));
+      .catch((error) => {
+        console.log("error", error);
+        setMessage("Error de conexión con el servidor.");
+      });
   }
 
+  // Vista de registro (opcional)
   if (showRegister) {
     return (
       <div
@@ -65,21 +85,18 @@ function Login() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundImage: "url('https://images.unsplash.com/photo-1564981797816-1043664bf78d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+          backgroundImage: "url('/colegio.png')",
           backgroundSize: "cover",
         }}
       >
         <div
           className="card p-4 shadow-lg"
-          style={{ 
-            maxWidth: "400px", 
-            width: "100%", 
-            backgroundColor: "rgba(255, 255, 255, 0.9)", 
+          style={{
+            maxWidth: "400px",
+            width: "100%",
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
             backdropFilter: "blur(10px)",
-            position: "relative", 
-            zIndex: 1,
-            border: "none",
-            borderRadius: "15px"
+            borderRadius: "15px",
           }}
         >
           <Registro />
@@ -102,27 +119,26 @@ function Login() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundImage: "url('https://images.unsplash.com/photo-1564981797816-1043664bf78d?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+        backgroundImage: "url('/colegio.png')",
         backgroundSize: "cover",
       }}
     >
       <div
         className="card p-4 shadow-lg"
-        style={{ 
-          maxWidth: "400px", 
-          width: "100%", 
-          backgroundColor: "rgba(255, 255, 255, 0.9)", 
+        style={{
+          maxWidth: "400px",
+          width: "100%",
+          backgroundColor: "rgba(255, 255, 255, 0.9)",
           backdropFilter: "blur(10px)",
-          position: "relative", 
-          zIndex: 1,
-          border: "none",
-          borderRadius: "15px"
+          borderRadius: "15px",
         }}
       >
-        <h1 className="text-center mb-3" style={{fontWeight: 700, letterSpacing: 1, color: "#3ab397" }} >LOGIN</h1>
+        <h1 className="text-center mb-3" style={{ fontWeight: 700, color: "#3ab397" }}>
+          LOGIN
+        </h1>
         <form onSubmit={handleLogin}>
           <div className="mb-3">
-            <label htmlFor="inputUser" className="form-label" >
+            <label htmlFor="inputUser" className="form-label">
               Usuario
             </label>
             <input
@@ -131,30 +147,38 @@ function Login() {
               placeholder="Ingresa tu usuario"
               id="inputUser"
               ref={userInputRef}
-              aria-describedby="userHelp"
+              required
             />
-            <div id="userHelp" className="form-text">
-              ¡Nunca compartas tus datos con nadie!
-            </div>
           </div>
 
           <div className="mb-4">
-            <label htmlFor="exampleInputContraseña " className="form-label">
+            <label htmlFor="inputPassword" className="form-label">
               Contraseña
             </label>
             <input
               type="password"
               className="form-control"
               placeholder="Ingresa tu contraseña"
-              id="exampleInputPassword1"
+              id="inputPassword"
               ref={passInputRef}
+              required
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: "100%", backgroundColor: "#3ab397", borderColor: "#3ab397" }}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: "100%", backgroundColor: "#3ab397", borderColor: "#3ab397" }}
+          >
             Ingresar
           </button>
-          <span className="ms-3">{message}</span>
+
+          {message && (
+            <div className="mt-3 text-center" style={{ color: "#e74c3c" }}>
+              {message}
+            </div>
+          )}
+
           <div className="mt-3">
             <button
               type="button"

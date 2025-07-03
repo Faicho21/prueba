@@ -4,6 +4,7 @@ interface Carrera {
   id: number;
   nombre: string;
   estado: string;
+  creado_en?: string;
   user_id: number;
   user?: {
     userdetail?: {
@@ -65,7 +66,7 @@ const Carreras: React.FC = () => {
     }
   }, [token]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -106,12 +107,6 @@ const Carreras: React.FC = () => {
       .catch(() => alert("Error al guardar la carrera."));
   };
 
-  const abrirModalEditar = (carrera: Carrera) => {
-    setFormData({ nombre: carrera.nombre, estado: carrera.estado });
-    setEditId(carrera.id);
-    setShowModal(true);
-  };
-
   return (
     <div className="container mt-5 fade-in-green">
       <h2 className="text-center text-success mb-4">Listado de Carreras</h2>
@@ -122,9 +117,8 @@ const Carreras: React.FC = () => {
             <tr>
               <th>ID</th>
               <th>Nombre</th>
-              <th>Estado</th>
+              <th>Fecha de creación</th>
               <th>Responsable</th>
-              {tipoUsuario === "Admin" && <th>Acciones</th>}
             </tr>
           </thead>
           <tbody>
@@ -132,19 +126,12 @@ const Carreras: React.FC = () => {
               <tr key={carrera.id}>
                 <td>{carrera.id}</td>
                 <td>{carrera.nombre}</td>
-                <td>{carrera.estado}</td>
+                <td>{carrera.creado_en ? new Date(carrera.creado_en).toLocaleDateString() : '---'}</td>
                 <td>
                   {carrera.user?.userdetail
                     ? `${carrera.user.userdetail.firstName || ''} ${carrera.user.userdetail.lastName || ''}`
                     : `ID: ${carrera.user_id}`}
                 </td>
-                {tipoUsuario === "Admin" && (
-                  <td>
-                    <button className="btn btn-sm btn-primary" onClick={() => abrirModalEditar(carrera)}>
-                      Editar
-                    </button>
-                  </td>
-                )}
               </tr>
             ))}
           </tbody>
@@ -183,9 +170,23 @@ const Carreras: React.FC = () => {
               </div>
               <div className="modal-body">
                 <label className="form-label">Nombre</label>
-                <input className="form-control mb-2" name="nombre" value={formData.nombre} onChange={handleChange} />
+                <input
+                  className="form-control mb-2"
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                />
                 <label className="form-label">Estado</label>
-                <input className="form-control mb-2" name="estado" value={formData.estado} onChange={handleChange} />
+                <select
+                  className="form-select mb-2"
+                  name="estado"
+                  value={formData.estado}
+                  onChange={handleChange}
+                >
+                  <option value="">Seleccionar estado</option>
+                  <option value="activo">Activo</option>
+                  <option value="inactivo">Inactivo</option>
+                </select>
               </div>
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>

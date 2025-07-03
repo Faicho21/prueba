@@ -3,21 +3,18 @@ from typing import List
 from auth.seguridad import obtener_usuario_desde_token
 from models.pago import Pago, NuevoPago, session, PagoOut, EditarPago
 from models.user import User
-from auth.seguridad import Seguridad
 from fastapi.responses import JSONResponse
 from psycopg2 import IntegrityError
-from sqlalchemy.orm import (
-   joinedload,
-)
+from sqlalchemy.orm import joinedload
 
 pago = APIRouter()
 
-@pago.post("/nuevoPago") # Ruta protegida para que el ADMIN ingrese un nuevo pago
+# Crear un nuevo pago (solo Admin)
+@pago.post("/pago/nuevo")
 def nuevo_pago(pago: NuevoPago, payload: dict = Depends(obtener_usuario_desde_token)):
     if payload["type"] != "Admin":
-        raise JSONResponse(status_code=403, detail="No tienes permiso para ingresar pagos")
-        
-    
+        return JSONResponse(status_code=403, content={"message": "No tienes permiso para ingresar pagos"})
+
     try:
         nuevo_pago = Pago(
             carrera_id=pago.carrera_id,
@@ -34,28 +31,29 @@ def nuevo_pago(pago: NuevoPago, payload: dict = Depends(obtener_usuario_desde_to
     finally:
         session.close()
 
-@pago.delete("/eliminarPago/{pago_id}") # Ruta protegida para que el ADMIN elimine un pago
+# Eliminar un pago (solo Admin)
+@pago.delete("/pago/{pago_id}")
 def eliminar_pago(pago_id: int, payload: dict = Depends(obtener_usuario_desde_token)):
-    
     if payload["type"] != "Admin":
-        raise JSONResponse(status_code=403, detail="Solo el administrador puede eliminar pagos")
+        return JSONResponse(status_code=403, content={"message": "Solo el administrador puede eliminar pagos"})
 
     try:
-        pago = session.query(Pago).filter_by(id=pago_id).first()
-        if not pago:
+        pago_obj = session.query(Pago).filter_by(id=pago_id).first()
+        if not pago_obj:
             return JSONResponse(status_code=404, content={"message": "Pago no encontrado"})
 
-        session.delete(pago)
+        session.delete(pago_obj)
         session.commit()
         return {"message": "Pago eliminado"}
     finally:
         session.close()
 
-@pago.put("/editarPago/{pago_id}") # Ruta protegida para que el ADMIN modifique un pago
+# Modificar un pago completo (solo Admin)
+@pago.put("/pago/{pago_id}")
 def modificar_pago(pago_id: int, pago: NuevoPago, payload: dict = Depends(obtener_usuario_desde_token)):
     if payload["type"] != "Admin":
-        raise JSONResponse(status_code=403, detail="Solo el administrador puede modificar pagos")
-    
+        return JSONResponse(status_code=403, content={"message": "Solo el administrador puede modificar pagos"})
+
     try:
         pago_existente = session.query(Pago).filter_by(id=pago_id).first()
         if not pago_existente:
@@ -71,36 +69,9 @@ def modificar_pago(pago_id: int, pago: NuevoPago, payload: dict = Depends(obtene
     finally:
         session.close()
 
-@pago.get("/pago/todos", response_model=List[PagoOut])       #para que el ADMIN vea TODOS los pagos
-def ver_todos_los_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
-    if payload["type"] not in ["Admin"]:
-        raise HTTPException(status_code=403, detail="No autorizado")
-    
-    try:
-        pagos = session.query(Pago).all()
-        return pagos
-    finally:
-        session.close()
-        
-@pago.get("/pago/mis_pagos")
-def ver_mis_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
-    if payload["type"] != "Alumno":
-        raise HTTPException(status_code=403, detail="Solo los alumnos pueden ver estos pagos")
-    
-    try:
-        user = session.query(User).filter_by(id=payload["sub"]).first()
-        if user:
-            return user.pago
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    finally:
-        session.close()
-
-@pago.patch("/editarPago/{pago_id}")  # Ruta protegida para modificación parcial
-def editar_pago_parcial(
-    pago_id: int,
-    datos_actualizados: EditarPago,
-    payload: dict = Depends(obtener_usuario_desde_token)
-):
+# Modificar un pago parcialmente (solo Admin)
+@pago.patch("/pago/{pago_id}")
+def editar_pago_parcial(pago_id: int, datos_actualizados: EditarPago, payload: dict = Depends(obtener_usuario_desde_token)):
     if payload["type"] != "Admin":
         return JSONResponse(status_code=403, content={"message": "Solo el administrador puede modificar pagos"})
 
@@ -121,4 +92,28 @@ def editar_pago_parcial(
         session.commit()
         return {"message": "Pago modificado parcialmente"}
     finally:
-       session.close()
+        session.close()
+
+# Ver todos los pagos (solo Admin)
+@pago.get("/pago/todos", response_model=List[PagoOut])
+def ver_todos_los_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
+    if payload["type"] != "Admin":
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    try:
+        pagos = session.query(Pago).all()
+        return pagos
+    finally:
+        session.close()
+
+# Ver los pagos del alumno autenticado
+@pago.get("/pago/mis_pagos", response_model=List[PagoOut])
+def ver_mis_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
+    if payload["type"] != "Alumno":
+        raise HTTPException(status_code=403, detail="Solo los alumnos pueden ver estos pagos")
+
+    try:
+        pagos = session.query(Pago).filter(Pago.user_id == payload["sub"]).all()
+        return pagos
+    finally:
+        session.close()

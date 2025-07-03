@@ -10,15 +10,13 @@ class Carrera(Base):
 
     id = Column("id", Integer, primary_key=True)
     nombre = Column("nombre", String)
-    estado = Column("estado", String)
+    estado = Column("estado", String)  # ⚠️ Obsoleto, mantener por compatibilidad
     user_id = Column(ForeignKey("usuarios.id"))
 
-    # Relaciones existentes
     materias = relationship("Materia", back_populates="carrera")
     userspivote = relationship("UsuarioCarrera", back_populates="carrera")
 
-    # 🚨 Nueva relación: para acceder al usuario creador
-    user = relationship("User")  # Esto permite acceder a user.userdetail desde carrera
+    user = relationship("User")  # Permite acceder a user.userdetail desde carrera
 
     def __init__(self, nombre, estado, user_id):
         self.nombre = nombre
@@ -29,10 +27,9 @@ class Carrera(Base):
 
 class NuevaCarrera(BaseModel):
     nombre: str
-    estado: str
+    estado: Optional[str] = "activa"  # ⚠️ Lo dejamos opcional para evitar errores
     user_id: int
 
-# Para mostrar el nombre/apellido del responsable
 class UserDetailOut(BaseModel):
     firstName: Optional[str]
     lastName: Optional[str]
@@ -41,13 +38,12 @@ class UserOut(BaseModel):
     id: int
     userdetail: Optional[UserDetailOut]
 
-# Carrera extendida
 class CarreraOut(BaseModel):
     id: int
     nombre: str
-    estado: str
+    estado: Optional[str]
     user_id: int
-    user: Optional[UserOut]  # ← Esto habilita mostrar nombre/apellido en el frontend
+    user: Optional[UserOut]
 
     class Config:
         orm_mode = True

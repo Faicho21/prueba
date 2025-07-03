@@ -33,12 +33,16 @@ const MisPagos: React.FC = () => {
       setTipoUsuario(payload.type);
       setNombreAlumno(payload.username || "Alumno");
 
-      const userLocal = localStorage.getItem("user");
-      if (userLocal) {
-        const user = JSON.parse(userLocal);
-        setFirstName(user.userdetail?.firstName || "");
-        setLastName(user.userdetail?.lastName || "");
-      }
+      const userId = payload.sub;
+      fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          setFirstName(data.userdetail?.firstName || "");
+          setLastName(data.userdetail?.lastName || "");
+        })
+        .catch(err => console.error("Error al cargar nombre del alumno", err));
     }
   }, [token]);
 
