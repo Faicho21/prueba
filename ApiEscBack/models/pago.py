@@ -23,7 +23,26 @@ class Pago(Base):
         self.user_id = user_id
         self.monto = monto
         self.mes = mes
+        
+class CarreraBase(BaseModel):
+    id: int
+    nombre: str
 
+    class Config:
+        orm_mode = True
+
+class PagoOut(BaseModel):
+    id: int
+    user_id: int
+    carrera_id: int
+    monto: int
+    mes: str
+    carrera: Optional[CarreraBase]  # ✅ Este campo es el que habilita .carrera.nombre
+
+    class Config:
+        orm_mode = True
+        
+        
 class NuevoPago(BaseModel):
     carrera_id: int
     user_id: int
@@ -44,15 +63,6 @@ class EditarPago(BaseModel):
     carrera_id: Optional[int] = None
     monto: Optional[float] = None
     mes: Optional[str] = None
-
-class PagoOut(BaseModel):
-    id: int
-    user_id: int
-    carrera_id: int
-    monto: int
-    mes: datetime.datetime
-
-    model_config = ConfigDict(from_attributes=True)  # para Pydantic v2
 
 Session = sessionmaker(bind=engine)
 session = Session()

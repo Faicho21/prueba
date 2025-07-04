@@ -77,24 +77,32 @@ def ver_todos_los_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
         raise HTTPException(status_code=403, detail="No autorizado")
     
     try:
-        pagos = session.query(Pago).all()
+        pagos = session.query(Pago).options(joinedload(Pago.carrera)).all()
         return pagos
     finally:
         session.close()
         
-@pago.get("/pago/mis_pagos")
-def ver_mis_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
+@pago.get("/pago/mis_pagos", response_model=list[PagoOut])
+def ver_mis_pagos(
+    payload: dict = Depends(obtener_usuario_desde_token),
+    
+):
     if payload["type"] != "Alumno":
         raise HTTPException(status_code=403, detail="Solo los alumnos pueden ver estos pagos")
-    
     try:
-        user = session.query(User).filter_by(id=payload["sub"]).first()
-        if user:
-            return user.pago
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        pagos = session.query(Pago).options(joinedload(Pago.carrera)).filter(Pago.user_id == payload["sub"]).all()
+        
+        pagos_formateados = []
+        for p in pagos:
+            p_dict = p.__dict__.copy()
+            p_dict["mes"] = p.mes.strftime("%Y-%m") if p.mes else None
+            p_dict["carrera"] = p.carrera
+            pagos_formateados.append(p_dict)
+
+        return pagos_formateados
     finally:
         session.close()
-
+    
 @pago.patch("/editarPago/{pago_id}")  # Ruta protegida para modificación parcial
 def editar_pago_parcial(
     pago_id: int,

@@ -20,17 +20,17 @@ class Carrera(Base):
     # 🚨 Nueva relación: para acceder al usuario creador
     user = relationship("User")  # Esto permite acceder a user.userdetail desde carrera
 
-    def __init__(self, nombre, estado, user_id):
+    def __init__(self, nombre, estado):
         self.nombre = nombre
         self.estado = estado
-        self.user_id = user_id
+        
 
 # ───── Pydantic Schemas ─────
 
 class NuevaCarrera(BaseModel):
     nombre: str
     estado: str
-    user_id: int
+    
 
 # Para mostrar el nombre/apellido del responsable
 class UserDetailOut(BaseModel):
@@ -45,12 +45,19 @@ class UserOut(BaseModel):
 class CarreraOut(BaseModel):
     id: int
     nombre: str
-    estado: str
-    user_id: int
+    estado: str    
     user: Optional[UserOut]  # ← Esto habilita mostrar nombre/apellido en el frontend
 
     class Config:
         orm_mode = True
+
+class CarreraUpdate(BaseModel):
+    nombre: Optional[str] = None
+    estado: Optional[str] = None
+        
+    class Config:
+        orm_mode = True
+        
 
 # ───── Sesión ─────
 Session = sessionmaker(bind=engine)

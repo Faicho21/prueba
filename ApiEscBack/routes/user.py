@@ -235,6 +235,7 @@ def validate_email(value):
         return value
 
 
+
 # region de userDetail
 @userDetail.get("/userdetail/all")
 def get_userDetails():
@@ -254,6 +255,29 @@ def add_usuarDetail(userDet: InputUserDetail):
     session.commit()
     return "usuario detail agregado"
 
+@user.get("/user/alumnos")
+def obtener_alumnos():
+    try:
+        alumnos = (
+            session.query(User)
+            .join(UserDetail)
+            .filter(UserDetail.type == "Alumno")
+            .all()
+        )
+        return [
+            {
+                "id": a.id,
+                "username": a.username,
+                "userdetail": {
+                    "firstName": a.userdetail.firstName,
+                    "lastName": a.userdetail.lastName
+                }
+            }
+            for a in alumnos
+        ]
+    except Exception as e:
+        print("Error al obtener alumnos:", e)
+        return JSONResponse(status_code=500, content={"detail": "Error al obtener alumnos"})
 
 # endregion de userDetail
 #region rutas sin uso

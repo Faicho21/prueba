@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import { motion, AnimatePresence } from "framer-motion";
-import { Navigate } from "react-router-dom";
 
 interface Pago {
   id: number;
@@ -53,67 +52,51 @@ const Pagos: React.FC = () => {
     monto: 0,
     mes: "",
   });
-  const [pagoSeleccionado, setPagoSeleccionado] = useState<Pago | null>(null);
-  const [pagoOriginal, setPagoOriginal] = useState<Pago | null>(null);
-  const [mostrarModal, setMostrarModal] = useState<boolean>(false);
   const [tipoUsuario, setTipoUsuario] = useState<string>("");
+  const [pagoSeleccionado, setPagoSeleccionado] = useState<Pago | null>(null);
+  const [mostrarModal, setMostrarModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (mensaje || error) {
+      const timer = setTimeout(() => {
+        setMensaje(null);
+        setError(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [mensaje, error]);
 
   useEffect(() => {
     if (token) {
       const payload = JSON.parse(atob(token.split(".")[1]));
       setTipoUsuario(payload.type);
-    }
-  }, [token]);
 
-  useEffect(() => {
-    if (tipoUsuario === "Admin") {
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/todos`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
-        .then((data) => setPagos(Array.isArray(data) ? data : []))
-        .catch(() => setError("No se pudieron cargar los pagos."));
+        .then((data) => setPagos(Array.isArray(data) ? data : []));
 
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/users/all`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
-        .then((data) => {
-          const alumnosFiltrados = data.filter(
-            (u: Usuario) => u.userdetail?.type === "Alumno"
-          );
-          setAlumnos(alumnosFiltrados);
-        })
-        .catch(() => setError("No se pudieron cargar los alumnos."));
+        .then((data) => setAlumnos(data.filter((u: Usuario) => u.userdetail?.type === "Alumno")));
 
       fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/todas`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
-        .then((data) => setCarreras(Array.isArray(data) ? data : []))
-        .catch(() => setError("No se pudieron cargar las carreras."));
+        .then((data) => setCarreras(Array.isArray(data) ? data : []));
     }
-  }, [tipoUsuario]);
+  }, [token]);
 
-  const opcionesAlumnos = alumnos.map((alumno) => ({
-    value: alumno.id,
-    label: `${alumno.userdetail.firstName} ${alumno.userdetail.lastName}`,
-  }));
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const parsedValue = ["user_id", "carrera_id", "monto"].includes(name)
-      ? Number(value)
-      : value;
-    setNuevoPago({ ...nuevoPago, [name]: parsedValue });
+    setNuevoPago({ ...nuevoPago, [name]: name === "monto" ? Number(value) : value });
   };
 
   const crearPago = () => {
-    setError(null);
-    setMensaje(null);
-
     if (!nuevoPago.user_id || !nuevoPago.carrera_id || !nuevoPago.monto || !nuevoPago.mes) {
       setError("Todos los campos son obligatorios.");
       return;
@@ -127,20 +110,16 @@ const Pagos: React.FC = () => {
       },
       body: JSON.stringify(nuevoPago),
     })
-      .then((res) => {
-        if (!res.ok) throw res;
-        setMensaje("Pago agregado exitosamente.");
+      .then((res) => res.json())
+      .then(() => {
+        setMensaje("Pago creado correctamente.");
         setNuevoPago({ user_id: 0, carrera_id: 0, monto: 0, mes: "" });
         return fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/todos`, {
           headers: { Authorization: `Bearer ${token}` },
         });
       })
       .then((res) => res.json())
-      .then((data) => setPagos(data))
-      .catch(async (err) => {
-        const errorData = await err.json();
-        setError(errorData.detail || "Error al crear el pago.");
-      });
+      .then((data) => setPagos(data));
   };
 
   const eliminarPago = (id: number) => {
@@ -152,49 +131,16 @@ const Pagos: React.FC = () => {
       .then(() => {
         setMensaje("Pago eliminado correctamente.");
         setPagos(pagos.filter((p) => p.id !== id));
-      })
-      .catch(() => setError("Error al eliminar el pago."));
+      });
   };
 
-  const abrirModalEdicion = (pago: Pago) => {
-    setPagoSeleccionado({ ...pago });
-    setPagoOriginal({ ...pago });
+  const abrirEdicion = (pago: Pago) => {
+    setPagoSeleccionado(pago);
     setMostrarModal(true);
   };
 
-  const handleEditarPagoChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const guardarEdicion = () => {
     if (!pagoSeleccionado) return;
-    const { name, value } = e.target;
-    const parsedValue = ["user_id", "carrera_id", "monto"].includes(name)
-      ? Number(value)
-      : value;
-    setPagoSeleccionado({ ...pagoSeleccionado, [name]: parsedValue });
-  };
-
-  const guardarEdicionPago = () => {
-    if (!pagoSeleccionado || !pagoOriginal) return;
-
-    const camposEditados: Partial<NuevoPago> = {};
-
-    if (pagoSeleccionado.user_id !== pagoOriginal.user_id)
-      camposEditados.user_id = pagoSeleccionado.user_id;
-
-    if (pagoSeleccionado.carrera_id !== pagoOriginal.carrera_id)
-      camposEditados.carrera_id = pagoSeleccionado.carrera_id;
-
-    if (pagoSeleccionado.monto !== pagoOriginal.monto)
-      camposEditados.monto = pagoSeleccionado.monto;
-
-    if (pagoSeleccionado.mes !== pagoOriginal.mes)
-      camposEditados.mes = pagoSeleccionado.mes;
-
-    if (Object.keys(camposEditados).length === 0) {
-      setMensaje("No se realizaron cambios.");
-      setMostrarModal(false);
-      return;
-    }
 
     fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/editarPago/${pagoSeleccionado.id}`, {
       method: "PATCH",
@@ -202,158 +148,124 @@ const Pagos: React.FC = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(camposEditados),
+      body: JSON.stringify(pagoSeleccionado),
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al editar el pago.");
+      .then(res => res.json())
+      .then(() => {
         setMensaje("Pago editado correctamente.");
         setMostrarModal(false);
         return fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/todos`, {
           headers: { Authorization: `Bearer ${token}` },
         });
       })
-      .then((res) => res.json())
-      .then((data) => setPagos(data))
-      .catch(() => setError("Error al editar el pago."));
+      .then(res => res.json())
+      .then((data) => setPagos(data));
   };
 
+  return (
+    <div className="container-fluid mt-4">
+      {mensaje && <div className="alert alert-info text-center">{mensaje}</div>}
+      {error && <div className="alert alert-danger text-center">{error}</div>}
 
- return (
-    <div className="container mt-5">
-      <motion.div
-        className="p-4 mb-4 bg-success bg-opacity-10 border-start border-4 border-success rounded shadow-sm"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <h2 className="text-success m-0 text-center">Gestión de Pagos</h2>
-      </motion.div>
-
-      {mensaje && <div className="alert alert-success">{mensaje}</div>}
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      <div className="card mb-4">
-        <div className="card-header">Nuevo Pago</div>
-        <div className="card-body row g-3">
+      <div className="p-4 bg-light border rounded shadow-sm mb-4">
+        <h5>Nuevo Pago</h5>
+        <div className="row g-3 align-items-end">
           <div className="col-md-4">
             <Select
-              options={opcionesAlumnos}
-              placeholder="Buscar alumno..."
-              onChange={(selectedOption) =>
-                setNuevoPago({
-                  ...nuevoPago,
-                  user_id: selectedOption?.value || 0,
-                })
-              }
-              value={
-                opcionesAlumnos.find(
-                  (opt) => opt.value === nuevoPago.user_id
-                ) || null
-              }
+              options={alumnos.map((a) => ({ value: a.id, label: `${a.userdetail.firstName} ${a.userdetail.lastName}` }))}
+              placeholder="Alumno"
+              value={alumnos.find((a) => a.id === nuevoPago.user_id) ? { value: nuevoPago.user_id, label: `${alumnos.find((a) => a.id === nuevoPago.user_id)?.userdetail.firstName} ${alumnos.find((a) => a.id === nuevoPago.user_id)?.userdetail.lastName}` } : null}
+              onChange={(option) => setNuevoPago({ ...nuevoPago, user_id: option?.value || 0 })}
               isClearable
             />
           </div>
-
           <div className="col-md-3">
-            <select
-              className="form-select"
-              name="carrera_id"
-              value={nuevoPago.carrera_id}
-              onChange={handleInputChange}
-            >
+            <select className="form-select" name="carrera_id" value={nuevoPago.carrera_id} onChange={handleChange}>
               <option value={0}>Seleccionar carrera</option>
               {carreras.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
+                <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
             </select>
           </div>
-
-          <div className="col-md-1">
+          <div className="col-md-2">
             <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
+              type="number"
               name="monto"
               className="form-control"
-              placeholder="MONTO"
-              value={nuevoPago.monto === 0 ? "" : nuevoPago.monto}
-              onChange={handleInputChange}
+              placeholder="Monto"
+              value={nuevoPago.monto || ""}
+              onChange={handleChange}
             />
           </div>
-
-          <div className="col-md-3">
+          <div className="col-md-2">
             <input
-              type="date"
+              type="month"
               name="mes"
               className="form-control"
               value={nuevoPago.mes}
-              onChange={handleInputChange}
+              onChange={handleChange}
             />
           </div>
-
-          <div className="col-md-1 d-grid">
-            <button className="btn btn-success" onClick={crearPago}>
-              Registrar
+          <div className="col-md-1">
+            <button
+              className="btn border-success text-success w-100"
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              onClick={crearPago}
+            >
+              Crear
             </button>
           </div>
         </div>
       </div>
 
-      <h4>Pagos Registrados</h4>
-      <div className="table-responsive">
-        <table className="table table-striped table-hover">
-          <thead className="table-light">
-            <tr>
-              <th>ID</th>
-              <th>Usuario</th>
-              <th>Carrera</th>
-              <th>Monto</th>
-              <th>Mes</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagos.length > 0 ? (
-              pagos.map((p) => (
+      <div className="p-4 bg-light border rounded shadow-sm">
+        <h5>Pagos Registrados</h5>
+        <div className="table-responsive" style={{ maxHeight: "400px", overflowY: "auto" }}>
+          <table className="table table-sm table-bordered">
+            <thead className="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Alumno</th>
+                <th>Carrera</th>
+                <th>Monto</th>
+                <th>Mes</th>
+                <th className="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pagos.map((p) => (
                 <tr key={p.id}>
                   <td>{p.id}</td>
-                  <td>
-                    {alumnos.find((a) => a.id === p.user_id)?.userdetail
-                      ?.firstName || "ID: " + p.user_id}
-                  </td>
-                  <td>
-                    {carreras.find((c) => c.id === p.carrera_id)?.nombre ||
-                      "ID: " + p.carrera_id}
-                  </td>
+                  <td>{alumnos.find((a) => a.id === p.user_id)?.userdetail.firstName || `ID: ${p.user_id}`}</td>
+                  <td>{carreras.find((c) => c.id === p.carrera_id)?.nombre || `ID: ${p.carrera_id}`}</td>
                   <td>{p.monto}</td>
                   <td>{p.mes}</td>
-                  <td>
+                  <td className="text-end">
                     <button
-                      className="btn btn-sm btn-primary me-2"
-                      onClick={() => abrirModalEdicion(p)}
+                      className="btn btn-sm border-secondary text-secondary me-2"
+                      style={{ backgroundColor: 'transparent', transition: '0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                      onClick={() => abrirEdicion(p)}
                     >
-                      Editar
+                      🖉 Editar
                     </button>
                     <button
-                      className="btn btn-sm btn-danger"
+                      className="btn btn-sm border-dark text-dark"
+                      style={{ backgroundColor: 'transparent', transition: '0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                       onClick={() => eliminarPago(p.id)}
                     >
-                      Eliminar
+                      🗑️ Eliminar
                     </button>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="text-center">
-                  No hay pagos registrados.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -361,79 +273,36 @@ const Pagos: React.FC = () => {
           <motion.div
             className="modal d-block"
             style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-            initial={{ opacity: 0, y: -100 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -100 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header">
                   <h5 className="modal-title">Editar Pago</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={() => setMostrarModal(false)}
-                  ></button>
+                  <button type="button" className="btn-close" onClick={() => setMostrarModal(false)}></button>
                 </div>
                 <div className="modal-body">
-                  <Select
-                    options={opcionesAlumnos}
-                    placeholder="Buscar alumno..."
-                    onChange={(selectedOption) =>
-                      setPagoSeleccionado({
-                        ...pagoSeleccionado,
-                        user_id: selectedOption?.value || 0,
-                      })
-                    }
-                    value={
-                      opcionesAlumnos.find(
-                        (opt) => opt.value === pagoSeleccionado.user_id
-                      ) || null
-                    }
-                    isClearable
-                  />
                   <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    name="monto"
-                    className="form-control mt-2"
+                    type="number"
+                    className="form-control mb-2"
                     placeholder="Monto"
                     value={pagoSeleccionado.monto}
-                    onChange={handleEditarPagoChange}
+                    onChange={(e) => setPagoSeleccionado({ ...pagoSeleccionado, monto: Number(e.target.value) })}
                   />
                   <input
-                    type="date"
-                    className="form-control mt-2"
-                    name="mes"
+                    type="month"
+                    className="form-control mb-2"
                     value={pagoSeleccionado.mes}
-                    onChange={handleEditarPagoChange}
+                    onChange={(e) => setPagoSeleccionado({ ...pagoSeleccionado, mes: e.target.value })}
                   />
-                  <select
-                    className="form-select mt-2"
-                    name="carrera_id"
-                    value={pagoSeleccionado.carrera_id}
-                    onChange={handleEditarPagoChange}
-                  >
-                    <option value={0}>Seleccionar carrera</option>
-                    {carreras.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre}
-                      </option>
-                    ))}
-                  </select>
                 </div>
                 <div className="modal-footer">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setMostrarModal(false)}
-                  >
+                  <button className="btn btn-secondary" onClick={() => setMostrarModal(false)}>
                     Cancelar
                   </button>
-                  <button
-                    className="btn btn-primary"
-                    onClick={guardarEdicionPago}
-                  >
+                  <button className="btn btn-primary" onClick={guardarEdicion}>
                     Guardar Cambios
                   </button>
                 </div>
@@ -446,4 +315,4 @@ const Pagos: React.FC = () => {
   );
 };
 
-export default Pagos;
+export default Pagos;

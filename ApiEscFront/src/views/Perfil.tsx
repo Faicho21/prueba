@@ -9,8 +9,8 @@ function Perfil() {
     lastName: '',
     email: ''
   });
+  const [acciones, setAcciones] = useState<any[]>([]);
 
-  // Inyectar estilos con animación
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -20,12 +20,14 @@ function Perfil() {
       }
 
       .fade-in-green {
+        border: none;
         animation: slideFadeIn 0.6s ease-out forwards;
-        border: 2px solid #3ab397;
-        border-radius: 15px;
-        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 1s2px;
+        background-color: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(6px);
         padding: 2rem;
+        height: 100%;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       }
     `;
     document.head.appendChild(style);
@@ -42,6 +44,14 @@ function Perfil() {
         email: parsedUser.email
       });
     }
+
+    const accionesSimuladas = [
+      { id: 1, tipo: 'Creaciones', descripcion: 'Creó la carrera Ingeniería en Software', fecha: '2025-07-03' },
+      { id: 2, tipo: 'Inscripciones', descripcion: 'Inscribió a Juan Pérez en Contador Público', fecha: '2025-07-02' },
+      { id: 3, tipo: 'Pagos', descripcion: 'Registró pago de cuota de María López', fecha: '2025-07-01' },
+      { id: 4, tipo: 'Usuarios', descripcion: 'Creó usuario Pedro García', fecha: '2025-06-30' },
+    ];
+    setAcciones(accionesSimuladas);
   }, []);
 
   const handleChange = (e: any) => {
@@ -50,67 +60,63 @@ function Perfil() {
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    console.log('Datos actualizados:', formData);
-    setUser({ ...user, ...formData });
-    localStorage.setItem('user', JSON.stringify({ ...user, ...formData }));
+    const updatedUser = { ...user, ...formData };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
   };
 
   if (!user) {
     return <div className="text-center mt-5">Cargando perfil...</div>;
   }
 
-  return (
-    <div
-      className="d-flex flex-column min-vh-100"
-      style={{
-        backgroundImage: `url('/colegio.png')`,
-        backgroundSize: '100%',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
-      <div className="flex-grow-1 d-flex justify-content-center align-items-center">
-        <div
-          className="fade-in-green text-center"
-          style={{
-            maxWidth: '500px',
-            width: '90%',
-          }}
-        >
-          <h2 className="mb-4 text-success fw-bold">Perfil</h2>
-          <p><strong>Nombre:</strong> {user.firstName} {user.lastName}</p>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Tipo de Usuario:</strong> {user.type}</p>
+  const secciones = ['Creaciones', 'Inscripciones', 'Pagos', 'Usuarios'];
 
-          <button
-            className="btn btn-success mt-3"
-            data-bs-toggle="modal"
-            data-bs-target="#editarPerfilModal"
-          >
-            Editar Perfil
-          </button>
+  return (
+    <div className="container-fluid py-4 min-vh-100 d-flex flex-column">
+      <div className="row g-4 flex-grow-1">
+        <div className="col-12 col-lg-4">
+          <div className="fade-in-green text-center h-100 d-flex flex-column justify-content-between">
+            <div>
+              <h2 className="mb-3 text-success fw-bold">Perfil</h2>
+              <p><strong>Nombre:</strong> {user.firstName} {user.lastName}</p>
+              <p><strong>Email:</strong> {user.email}</p>
+              <p><strong>Tipo de Usuario:</strong> {user.type}</p>
+              <hr className="my-4" />
+              <p className="text-muted">Accedé a la sección "Carreras" para gestionar inscripciones, pagos y más.</p>
+            </div>
+            <button className="btn btn-outline-secondary mt-3" data-bs-toggle="modal" data-bs-target="#editarPerfilModal">Editar Perfil</button>
+          </div>
+        </div>
+
+        <div className="col-12 col-lg-8">
+          <div className="row g-3">
+            {secciones.map((tipo) => (
+              <div key={tipo} className="col-12">
+                <div className="fade-in-green">
+                  <h5 className="text-dark fw-bold mb-3">{`Últimas ${tipo.toLowerCase()}`}</h5>
+                  <ul className="list-group">
+                    {acciones.filter(a => a.tipo === tipo).map((accion) => (
+                      <li key={accion.id} className="list-group-item d-flex justify-content-between align-items-center">
+                        {accion.descripcion}
+                        <span className="badge bg-secondary">{accion.fecha}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <footer
-        className="text-center py-3 border-top"
-        style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        }}
-      >
+      <footer className="text-center py-3 border-top mt-5" style={{ backgroundColor: '#f8f9fa' }}>
         <small>
           Colegio Secundario Mariano Moreno | Av. Libertad 1234, Buenos Aires |
           (011) 1234-5678 | contacto@marianomoreno.edu.ar
         </small>
       </footer>
 
-      <div
-        className="modal fade"
-        id="editarPerfilModal"
-        tabIndex={-1}
-        aria-labelledby="editarPerfilModalLabel"
-        aria-hidden="true"
-      >
+      <div className="modal fade" id="editarPerfilModal" tabIndex={-1} aria-labelledby="editarPerfilModalLabel" aria-hidden="true">
         <div className="modal-dialog">
           <form onSubmit={handleSubmit}>
             <div className="modal-content">
@@ -121,33 +127,15 @@ function Perfil() {
               <div className="modal-body">
                 <div className="mb-3">
                   <label className="form-label">Nombre</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                  />
+                  <input type="text" className="form-control" name="firstName" value={formData.firstName} onChange={handleChange} />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Apellido</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                  />
+                  <input type="text" className="form-control" name="lastName" value={formData.lastName} onChange={handleChange} />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Email</label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                  />
+                  <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} />
                 </div>
               </div>
               <div className="modal-footer">
