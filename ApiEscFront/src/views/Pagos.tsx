@@ -171,6 +171,7 @@ const Pagos: React.FC = () => {
         <h5>Nuevo Pago</h5>
         <div className="row g-3 align-items-end">
           <div className="col-md-4">
+            <label className="form-label">Alumno</label>
             <Select
               options={alumnos.map((a) => ({ value: a.id, label: `${a.userdetail.firstName} ${a.userdetail.lastName}` }))}
               placeholder="Alumno"
@@ -180,6 +181,7 @@ const Pagos: React.FC = () => {
             />
           </div>
           <div className="col-md-3">
+            <label className="form-label">Carrera</label>
             <select className="form-select" name="carrera_id" value={nuevoPago.carrera_id} onChange={handleChange}>
               <option value={0}>Seleccionar carrera</option>
               {carreras.map((c) => (
@@ -188,18 +190,21 @@ const Pagos: React.FC = () => {
             </select>
           </div>
           <div className="col-md-2">
+            <label className="form-label">Monto</label>
             <input
               type="number"
               name="monto"
               className="form-control"
-              placeholder="Monto"
+              placeholder="MONTO"
               value={nuevoPago.monto || ""}
               onChange={handleChange}
+              style={{ appearance: "none", WebkitAppearance: "none", MozAppearance: "textfield" }}
             />
           </div>
           <div className="col-md-2">
+            <label className="form-label">Fecha de pago</label>
             <input
-              type="month"
+              type="date"
               name="mes"
               className="form-control"
               value={nuevoPago.mes}
@@ -207,6 +212,7 @@ const Pagos: React.FC = () => {
             />
           </div>
           <div className="col-md-1">
+            <label className="form-label invisible">Crear</label>
             <button
               className="btn border-success text-success w-100"
               onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}

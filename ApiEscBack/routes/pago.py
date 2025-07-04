@@ -70,7 +70,55 @@ def modificar_pago(pago_id: int, pago: NuevoPago, payload: dict = Depends(obtene
         return {"message": "Pago modificado correctamente"}
     finally:
         session.close()
+@pago.get("/pago/todos", response_model=List[PagoOut])  # Admin ve todos los pagos
+def ver_todos_los_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
+    if payload["type"] != "Admin":
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    try:
+        pagos = session.query(Pago).options(joinedload(Pago.carrera)).all()
+        pagos_serializados = []
+        for p in pagos:
+            pagos_serializados.append({
+                "id": p.id,
+                "user_id": p.user_id,
+                "carrera_id": p.carrera_id,
+                "monto": p.monto,
+                "mes": p.mes.strftime("%Y-%m") if p.mes else "",
+                "carrera": {
+                    "id": p.carrera.id,
+                    "nombre": p.carrera.nombre
+                } if p.carrera else None
+            })
+        return pagos_serializados
+    finally:
+        session.close()
+@pago.get("/pago/mis_pagos", response_model=List[PagoOut])
+def ver_mis_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
+    if payload["type"] != "Alumno":
+        raise HTTPException(status_code=403, detail="Solo los alumnos pueden ver estos pagos")
 
+    try:
+        pagos = session.query(Pago).options(joinedload(Pago.carrera)).filter(Pago.user_id == payload["sub"]).all()
+        pagos_serializados = []
+        for p in pagos:
+            pagos_serializados.append({
+                "id": p.id,
+                "user_id": p.user_id,
+                "carrera_id": p.carrera_id,
+                "monto": p.monto,
+                "mes": p.mes.strftime("%Y-%m") if p.mes else "",
+                "carrera": {
+                    "id": p.carrera.id,
+                    "nombre": p.carrera.nombre
+                } if p.carrera else None
+            })
+        return pagos_serializados
+    finally:
+        session.close()
+     
+
+'''
 @pago.get("/pago/todos", response_model=List[PagoOut])       #para que el ADMIN vea TODOS los pagos
 def ver_todos_los_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
     if payload["type"] not in ["Admin"]:
@@ -102,7 +150,7 @@ def ver_mis_pagos(
         return pagos_formateados
     finally:
         session.close()
-    
+'''
 @pago.patch("/editarPago/{pago_id}")  # Ruta protegida para modificación parcial
 def editar_pago_parcial(
     pago_id: int,
