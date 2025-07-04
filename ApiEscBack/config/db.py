@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Configuración de la base de datos (base de desarrollo)
-DATABASE_URL = "postgresql://postgres:1234@localhost:5432/escuela_test"
+DATABASE_URL = "postgresql://postgres:1648@localhost:5432/escuela_test"
 
 # Crear el engine de SQLAlchemy
 engine = create_engine(DATABASE_URL)

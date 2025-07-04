@@ -34,14 +34,7 @@ function Login() {
       if (payload) {
         localStorage.setItem("user", JSON.stringify(payload));
         setMessage("Inicio de sesión exitoso...");
-
-        if (payload.type === "Admin") {
-          navigate("/dashboard");
-        } else if (payload.type === "Alumno") {
-          navigate("/perfil");
-        } else {
-          navigate("/home");
-        }
+        navigate("/home");
       } else {
         setMessage("Error al leer datos del token.");
       }

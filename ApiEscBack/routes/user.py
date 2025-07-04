@@ -98,7 +98,7 @@ def crear_usuario(user: InputRegister, payload: dict = Depends(obtener_usuario_d
                     dni=None,
                     firstName=None,
                     lastName=None,
-                    type="Alumno",
+                    type="Admin",
                     email=user.email,
                 )
                 session.add(new_detail)

@@ -119,7 +119,7 @@ const Pagos: React.FC = () => {
       return;
     }
 
-    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/nuevoPago`, {
+    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/nuevo`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -145,7 +145,7 @@ const Pagos: React.FC = () => {
 
   const eliminarPago = (id: number) => {
     if (!window.confirm("¿Eliminar este pago?")) return;
-    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/eliminarPago/${id}`, {
+    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/{pago_id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -196,7 +196,7 @@ const Pagos: React.FC = () => {
       return;
     }
 
-    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/editarPago/${pagoSeleccionado.id}`, {
+    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/pago/${pagoSeleccionado.id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
