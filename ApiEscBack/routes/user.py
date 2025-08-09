@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Request, Depends, HTTPException
-from models.user import (session,InputUser,User,InputLogin,UserDetail,InputUserDetail,InputRegister,UserDetailUpdate, UserOut, UserDetailOut)
+from fastapi import APIRouter, Request, Depends, HTTPException, Query
+from models.user import (session,InputUser,User,InputLogin,UserDetail,InputUserDetail,InputRegister,UserDetailUpdate, UserOut, PaginatedUsers)
 from fastapi.responses import JSONResponse
 from psycopg2 import IntegrityError
 from auth.seguridad import obtener_usuario_desde_token, Seguridad
-from sqlalchemy.orm import (joinedload,load_only)
-from typing import List
+from sqlalchemy.orm import (joinedload)
+from typing import List, Optional
 from models.carrera import Carrera
 from models.carreraUsuario import UsuarioCarrera
 from models.pago import Pago
@@ -162,6 +162,27 @@ def obtener_usuarios(payload: dict = Depends(obtener_usuario_desde_token)):
             .all()
         )
         return usuarios
+    finally:
+        session.close()
+        
+@user.get("/users/all_paginated", response_model=PaginatedUsers)  # Ruta protegida con token
+def obtener_usuarios_paginated(
+    limit: int = Query(20, gt=0, le=100),
+    cursor: Optional[int] = Query(None),
+    payload: dict = Depends(obtener_usuario_desde_token)):
+    if payload["type"] not in ["Admin"]:
+        raise HTTPException(status_code=403, detail="No tienes permiso para ver los usuarios")
+    try:
+        query = session.query(User).options(joinedload(User.userdetail))  # Carga los detalles del usuario
+        if cursor is not None:
+            query = query.filter(User.id > cursor)
+        usuarios = query.limit(limit).all()
+        
+        next_cursor = usuarios[-1].id if usuarios else None  # Obtiene el ID del último usuario para el cursor
+        return {"usuarios": usuarios, "next_cursor": next_cursor}
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=401, detail="Error al obtener usuarios")
     finally:
         session.close()
 

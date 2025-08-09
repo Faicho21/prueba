@@ -2,7 +2,7 @@ from config.db import engine, Base
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 
 #regionUSER
@@ -66,6 +66,27 @@ class InputUserDetail(BaseModel):
    type: str
    email: str
 
+class UserDetailOut(BaseModel):
+    email: str
+    dni: int
+    firstName: str
+    lastName: str
+    type: str
+
+    class Config:
+        orm_mode = True
+   
+class UserOut(BaseModel):
+    id: int
+    username: str
+    userdetail: UserDetailOut  # 👈 Anidado
+
+    class Config:
+        orm_mode = True
+class PaginatedUsers(BaseModel):
+    usuarios: List[UserOut]
+    next_cursor: Optional[int]
+    
 class UserDetailUpdate(BaseModel):
     dni: Optional[int] = None
     firstName: Optional[str] = None
@@ -78,24 +99,6 @@ class InputRegister(BaseModel):
    password: str
    email: str
        
-class UserDetailOut(BaseModel):
-    email: str
-    dni: int
-    firstName: str
-    lastName: str
-    type: str
-
-    class Config:
-        orm_mode = True
-
-class UserOut(BaseModel):
-    id: int
-    username: str
-    userdetail: UserDetailOut  # 👈 Anidado
-
-    class Config:
-        orm_mode = True
-
 #endregion
 
 
