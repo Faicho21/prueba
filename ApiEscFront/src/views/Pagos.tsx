@@ -143,7 +143,7 @@ const Pagos: React.FC = () => {
     if (!pagoSeleccionado) return;
 
     fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/editarPago/${pagoSeleccionado.id}`, {
-      method: "PATCH",
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -243,20 +243,12 @@ const Pagos: React.FC = () => {
               {pagos.map((p) => (
                 <tr key={p.id}>
                   <td>{p.id}</td>
-                  <td>{alumnos.find((a) => a.id === p.user_id)?.userdetail.firstName || `ID: ${p.user_id}`}</td>
+                  <td>{alumnos.find((a) => a.id === p.user_id)? alumnos.find((a) => a.id === p.user_id)!.userdetail.firstName + " " + alumnos.find((a) => a.id === p.user_id)!.userdetail.lastName : `ID: ${p.user_id}`}</td>
                   <td>{carreras.find((c) => c.id === p.carrera_id)?.nombre || `ID: ${p.carrera_id}`}</td>
                   <td>{p.monto}</td>
                   <td>{p.mes}</td>
                   <td className="text-end">
-                    <button
-                      className="btn btn-sm border-secondary text-secondary me-2"
-                      style={{ backgroundColor: 'transparent', transition: '0.2s' }}
-                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}
-                      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                      onClick={() => abrirEdicion(p)}
-                    >
-                      🖉 Editar
-                    </button>
+                    
                     <button
                       className="btn btn-sm border-dark text-dark"
                       style={{ backgroundColor: 'transparent', transition: '0.2s' }}

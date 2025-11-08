@@ -30,6 +30,7 @@ const Carreras: React.FC = () => {
   const [userId, setUserId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ nombre: "", estado: "Activa" });
   const [editId, setEditId] = useState<number | null>(null);
+  const [editFormData, setEditFormData] = useState<{ nombre: string; estado: string }>({ nombre: "", estado: "Activa" });
 
   const [mensaje, setMensaje] = useState<string | null>(null);
 
@@ -74,39 +75,58 @@ const Carreras: React.FC = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-const guardarCarrera = () => {
-  if (!userId) return;
-
-  const data = {
-    nombre: formData.nombre,
-    estado: formData.estado,
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
   };
 
-  const url = editId
-    ? `http://${BACKEND_IP}:${BACKEND_PORT}/carrera/${editId}`
-    : `http://${BACKEND_IP}:${BACKEND_PORT}/nuevaCarrera`;
+  const guardarCarrera = () => {
+    if (!userId) return;
 
-  fetch(url, {
-    method: editId ? "PATCH" : "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Error al guardar la carrera.");
-      setMensaje(editId ? "Carrera actualizada." : "Carrera creada.");
-      setFormData({ nombre: "", estado: "Activa" });
-      setEditId(null);
-      return fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/todas`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    const data = {
+      nombre: formData.nombre,
+      estado: formData.estado,
+    };
+
+    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/nuevaCarrera`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
     })
-    .then((res) => res.json())
-    .then((data) => setCarreras(data));
-};
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al guardar la carrera.");
+        setMensaje("Carrera creada.");
+        setFormData({ nombre: "", estado: "Activa" });
+        return fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/todas`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      })
+      .then((res) => res.json())
+      .then((data) => setCarreras(data));
+  };
 
+  const guardarEdicionCarrera = (id: number) => {
+    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(editFormData),
+    })
+      .then((res) => res.json())
+      .then(() => {
+        setMensaje("Carrera actualizada.");
+        setEditId(null);
+        fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/todas`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => setCarreras(data));
+      });
+  };
 
   const inscribirAlumno = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,8 +152,12 @@ const guardarCarrera = () => {
   };
 
   const abrirEditar = (c: Carrera) => {
-    setFormData({ nombre: c.nombre, estado: c.estado });
+    setEditFormData({ nombre: c.nombre, estado: c.estado });
     setEditId(c.id);
+  };
+
+  const cancelarEditar = () => {
+    setEditId(null);
   };
 
   const eliminarCarrera = (id: number) => {
@@ -173,7 +197,7 @@ const guardarCarrera = () => {
                 <option value="Inactiva">Inactiva</option>
               </select>
               <button className="btn border-success text-success" onClick={guardarCarrera}>
-                {editId ? "Actualizar" : "Crear"}
+                Crear
               </button>
             </div>
           </div>
@@ -229,27 +253,66 @@ const guardarCarrera = () => {
                   {carreras.map((c) => (
                     <tr key={c.id}>
                       <td>{c.id}</td>
-                      <td>{c.nombre}</td>
-                      <td>{c.estado}</td>
+                      <td>
+                        {editId === c.id ? (
+                          <input
+                            className="form-control form-control-sm"
+                            name="nombre"
+                            value={editFormData.nombre}
+                            onChange={handleEditChange}
+                          />
+                        ) : (
+                          c.nombre
+                        )}
+                      </td>
+                      <td>
+                        {editId === c.id ? (
+                          <select
+                            className="form-select form-select-sm"
+                            name="estado"
+                            value={editFormData.estado}
+                            onChange={handleEditChange}
+                          >
+                            <option value="Activa">Activa</option>
+                            <option value="Inactiva">Inactiva</option>
+                          </select>
+                        ) : (
+                          c.estado
+                        )}
+                      </td>
                       <td className="text-end">
-                        <button
-                          className="btn btn-sm border-secondary text-secondary me-2"
-                          style={{ backgroundColor: 'transparent', transition: '0.2s' }}
-                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}
-                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                          onClick={() => abrirEditar(c)}
-                        >
-                          🖉 Editar
-                        </button>
-                        <button
-                          className="btn btn-sm border-dark text-dark"
-                          style={{ backgroundColor: 'transparent', transition: '0.2s' }}
-                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}
-                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                          onClick={() => eliminarCarrera(c.id)}
-                        >
-                          🗑️ Eliminar
-                        </button>
+                        <div className="d-flex justify-content-end align-items-center gap-2"></div>
+                          {editId === c.id ? (
+                            <>
+                              <button className="btn btn-sm btn-success me-2" onClick={() => guardarEdicionCarrera(c.id)}>
+                                💾 Guardar
+                              </button>
+                              <button className="btn btn-sm btn-secondary" onClick={cancelarEditar}>
+                                ❌ Cancelar
+                              </button>
+                            </>
+                        ) : (
+                          <>
+                            <button
+                              className="btn btn-sm border-secondary text-secondary me-2"
+                              style={{ backgroundColor: 'transparent', transition: '0.2s' }}
+                              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}
+                              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                              onClick={() => abrirEditar(c)}
+                            >
+                              🖉 Editar
+                            </button>
+                            <button
+                              className="btn btn-sm border-dark text-dark"
+                              style={{ backgroundColor: 'transparent', transition: '0.2s' }}
+                              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}
+                              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                              onClick={() => eliminarCarrera(c.id)}
+                            >
+                              🗑️ Eliminar
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -258,8 +321,6 @@ const guardarCarrera = () => {
             </div>
           </div>
         </div>
-
-
 
         {/* Alumnos inscriptos */}
         <div className="col-md-6">
@@ -280,7 +341,7 @@ const guardarCarrera = () => {
                 <ul className="list-group">
                   {alumnosInscriptos.map((alumno) => (
                     <li key={alumno.id} className="list-group-item">
-                      {alumno.userdetail.firstName} {alumno.userdetail.lastName} 
+                      {alumno.userdetail.firstName} {alumno.userdetail.lastName}
                     </li>
                   ))}
                 </ul>

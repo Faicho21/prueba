@@ -7,7 +7,7 @@ import MainLayout from './layouts/MainLayaut'
 import Carreras from './views/Carreras'
 
 function App() {
-  const Home = lazy(() => import('./views/Home'));
+  
   const Pagos = lazy(() => import('./views/Pagos'));
   const MisPagos = lazy(() => import('./views/MisPagos'));
   const Perfil = lazy(() => import('./views/Perfil'));
@@ -25,10 +25,9 @@ function App() {
         {/* Rutas protegidas (requieren token) */}
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
-            <Route path="/home" element={<Home />} />
             <Route path="/pagos" element={<Pagos />} />
             <Route path="/mis-pagos" element={<MisPagos />} />
-            <Route path="/perfil" element={<Perfil />} />
+            <Route path="/home" element={<Perfil />} />
             <Route path="/alumnos" element={<Alumnos />} />
             <Route path="/carreras" element={<Carreras/>} />
           </Route>

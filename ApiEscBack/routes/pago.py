@@ -51,23 +51,27 @@ def eliminar_pago(pago_id: int, payload: dict = Depends(obtener_usuario_desde_to
     finally:
         session.close()
 
-@pago.put("/editarPago/{pago_id}") # Ruta protegida para que el ADMIN modifique un pago
-def modificar_pago(pago_id: int, pago: NuevoPago, payload: dict = Depends(obtener_usuario_desde_token)):
+
+
+@pago.get("/pago/ultimo")
+def obtener_ultimo_pago(payload: dict = Depends(obtener_usuario_desde_token)):
     if payload["type"] != "Admin":
-        raise JSONResponse(status_code=403, detail="Solo el administrador puede modificar pagos")
-    
+        raise HTTPException(status_code=403, detail="No autorizado")
+
     try:
-        pago_existente = session.query(Pago).filter_by(id=pago_id).first()
-        if not pago_existente:
-            return JSONResponse(status_code=404, content={"message": "Pago no encontrado"})
+        ultimo = session.query(Pago).options(
+            joinedload(Pago.user).joinedload(User.userdetail)
+        ).order_by(Pago.id.desc()).first()
 
-        pago_existente.carrera_id = pago.carrera_id
-        pago_existente.user_id = pago.user_id
-        pago_existente.monto = pago.monto
-        pago_existente.mes = pago.mes
-        session.commit()
+        if not ultimo:
+            return JSONResponse(status_code=404, content={"message": "No hay pagos registrados"})
 
-        return {"message": "Pago modificado correctamente"}
+        return {
+            "alumno": f"{ultimo.user.userdetail.firstName} {ultimo.user.userdetail.lastName}"
+            if ultimo.user and ultimo.user.userdetail else "Alumno desconocido",
+            "monto": ultimo.monto,
+            "mes": ultimo.mes
+        }
     finally:
         session.close()
 @pago.get("/pago/todos", response_model=List[PagoOut])  # Admin ve todos los pagos
@@ -93,6 +97,7 @@ def ver_todos_los_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
         return pagos_serializados
     finally:
         session.close()
+
 @pago.get("/pago/mis_pagos", response_model=List[PagoOut])
 def ver_mis_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
     if payload["type"] != "Alumno":
@@ -129,6 +134,8 @@ def ver_todos_los_pagos(payload: dict = Depends(obtener_usuario_desde_token)):
         return pagos
     finally:
         session.close()
+
+        
         
 @pago.get("/pago/mis_pagos", response_model=list[PagoOut])
 def ver_mis_pagos(

@@ -279,6 +279,25 @@ def obtener_alumnos():
         print("Error al obtener alumnos:", e)
         return JSONResponse(status_code=500, content={"detail": "Error al obtener alumnos"})
 
+@user.get("/users/ultimo")
+def obtener_ultimo_usuario(payload: dict = Depends(obtener_usuario_desde_token)):
+    if payload["type"] != "Admin":
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    try:
+        ultimo = session.query(User).options(
+            joinedload(User.userdetail)
+        ).order_by(User.id.desc()).first()
+
+        if not ultimo or not ultimo.userdetail:
+            return JSONResponse(status_code=404, content={"message": "No hay usuarios registrados"})
+
+        return {
+            "firstName": ultimo.userdetail.firstName,
+            "lastName": ultimo.userdetail.lastName
+        }
+    finally:
+        session.close()
 # endregion de userDetail
 #region rutas sin uso
 @user.post("/users/login")

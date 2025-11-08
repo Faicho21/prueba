@@ -42,6 +42,25 @@ def ver_todas_las_carreras(payload: dict = Depends(obtener_usuario_desde_token))
     finally:
         session.close()
 
+#traer ultima carrera creada
+@carrera.get("/carrera/ultima")
+def obtener_ultima_carrera(payload: dict = Depends(obtener_usuario_desde_token)):
+    if payload["type"] != "Admin":
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    try:
+        ultima = session.query(Carrera).order_by(Carrera.id.desc()).first()
+
+        if not ultima:
+            return JSONResponse(status_code=404, content={"message": "No hay carreras registradas"})
+
+        return {
+            "nombre": ultima.nombre
+        }
+
+    finally:
+        session.close()
+
 @carrera.post("/carrera/inscribir-alumno", response_model=dict)
 def inscribir_alumno_carrera(
     inscripcion: UserCarreraCreate,
@@ -95,6 +114,31 @@ def inscribir_alumno_carrera(
         session.rollback()
         print(f"Error inesperado al inscribir alumno: {e}")
         raise HTTPException(status_code=500, detail="Error interno del servidor al inscribir alumno.")
+    finally:
+        session.close()
+
+#devuelve la ultima inscripcion realizada
+@carrera.get("/inscripcion/ultima")
+def obtener_ultima_inscripcion(payload: dict = Depends(obtener_usuario_desde_token)):
+    # Solo puede acceder Admin
+    if payload["type"] != "Admin":
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    try:
+        ultima = session.query(UsuarioCarrera).options(
+            joinedload(UsuarioCarrera.user).joinedload(User.userdetail),
+            joinedload(UsuarioCarrera.carrera)
+        ).order_by(UsuarioCarrera.id.desc()).first()
+
+        if not ultima:
+            return JSONResponse(status_code=404, content={"message": "No hay inscripciones registradas"})
+
+        return {
+            "alumno_nombre": f"{ultima.user.userdetail.firstName} {ultima.user.userdetail.lastName}"
+            if ultima.user and ultima.user.userdetail else "Alumno desconocido",
+            "carrera_nombre": ultima.carrera.nombre if ultima.carrera else "Carrera desconocida"
+        }
+
     finally:
         session.close()
         

@@ -26,16 +26,14 @@ function Nvar() {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark" style={{ backgroundColor: "#3ab397" }}>
       <div className="container">
-        <NavLink className="navbar-brand" to="/home">Mi Escuela</NavLink>
+        <NavLink className="navbar-brand" to="/home">Home</NavLink>
         <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span className="navbar-toggler-icon"></span>
         </button>
 
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto">
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/perfil">Perfil</NavLink>
-            </li>
+           
 
             {tipoUsuario === "alumno" && (
               <li className="nav-item">
@@ -46,13 +44,13 @@ function Nvar() {
             {tipoUsuario === "admin" && (
               <>
                 <li className="nav-item">
-                  <NavLink className="nav-link" to="/pagos">Pagos</NavLink>
-                </li>
-                <li className="nav-item">
                   <NavLink className="nav-link" to="/alumnos">Alumnos</NavLink>
                 </li>
                 <li className="nav-item">
                   <NavLink className="nav-link" to="/carreras">Carreras</NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink className="nav-link" to="/pagos">Pagos</NavLink>
                 </li>
               </>
             )}
