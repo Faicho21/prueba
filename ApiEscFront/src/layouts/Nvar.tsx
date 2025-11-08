@@ -33,7 +33,14 @@ function Nvar() {
 
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto">
+<<<<<<< HEAD
            
+=======
+    
+            <li className="nav-item">
+              <NavLink className="nav-link" to="/perfil">Perfil</NavLink>
+            </li>
+>>>>>>> 089d56b (Mis cambios locales antes de pull)
 
             {tipoUsuario === "alumno" && (
               <li className="nav-item">

@@ -6,14 +6,12 @@ interface Carrera {
   id: number;
   nombre: string;
   estado: string;
-}
-
-interface Alumno {
-  id: number;
-  username: string;
-  userdetail: {
-    firstName: string;
-    lastName: string;
+  user_id: number;
+  user?: {
+    userdetail?: {
+      firstName?: string;
+      lastName?: string;
+    };
   };
 }
 
@@ -103,224 +101,55 @@ const Carreras: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
       })
-      .then((res) => res.json())
-      .then((data) => setCarreras(data));
+      .then(res => res.json())
+      .then(data => setCarreras(data))
+      .catch(() => alert("Error al guardar la carrera."));
   };
 
-  const guardarEdicionCarrera = (id: number) => {
-    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/${id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(editFormData),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        setMensaje("Carrera actualizada.");
-        setEditId(null);
-        fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/todas`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((res) => res.json())
-          .then((data) => setCarreras(data));
-      });
-  };
-
-  const inscribirAlumno = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (tipoUsuario !== "Admin" || !selectedAlumno || !selectedCarrera) return;
-
-    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/inscribir-alumno`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        user_id: selectedAlumno.value,
-        carrera_id: selectedCarrera.value,
-      }),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        setMensaje("Alumno inscrito correctamente.");
-        setSelectedAlumno(null);
-        setSelectedCarrera(null);
-      });
-  };
-
-  const abrirEditar = (c: Carrera) => {
-    setEditFormData({ nombre: c.nombre, estado: c.estado });
-    setEditId(c.id);
-  };
-
-  const cancelarEditar = () => {
-    setEditId(null);
-  };
-
-  const eliminarCarrera = (id: number) => {
-    if (!window.confirm("Eliminar carrera? Esta acción no se puede deshacer.")) return;
-    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/eliminarCarrera/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then(() => {
-        setMensaje("Carrera eliminada.");
-        setCarreras((prev) => prev.filter((c) => c.id !== id));
-      });
-  };
-
-  const verInscriptos = (carreraId: number) => {
-    fetch(`http://${BACKEND_IP}:${BACKEND_PORT}/carrera/${carreraId}/alumnos`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setAlumnosInscriptos(data));
+  const abrirModalEditar = (carrera: Carrera) => {
+    setFormData({ nombre: carrera.nombre, estado: carrera.estado });
+    setEditId(carrera.id);
+    setShowModal(true);
   };
 
   return (
-    <div className="container-fluid mt-4">
-      {mensaje && <div className="alert alert-info text-center">{mensaje}</div>}
+    <div className="container mt-5 fade-in-green">
+      <h2 className="text-center text-success mb-4">Listado de Carreras</h2>
 
-      <div className="row g-4">
-        {/* Crear carrera */}
-        <div className="col-md-6">
-          <div className="p-4 bg-light border rounded shadow-sm h-100">
-            <h5>Nueva Carrera</h5>
-            <div className="d-flex gap-2 align-items-end">
-              <input className="form-control w-50" name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre" />
-              <select className="form-select w-25" name="estado" value={formData.estado} onChange={handleChange}>
-                <option value="Activa">Activa</option>
-                <option value="Inactiva">Inactiva</option>
-              </select>
-              <button className="btn border-success text-success" onClick={guardarCarrera}>
-                Crear
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Inscribir alumno */}
-        <div className="col-md-6">
-          <div className="p-4 bg-light border rounded shadow-sm h-100">
-            <h5>Inscribir Alumno en Carrera</h5>
-            <form onSubmit={inscribirAlumno}>
-              <div className="d-flex gap-2 align-items-end">
-                <div className="w-50">
-                  <Select
-                    value={selectedAlumno}
-                    onChange={setSelectedAlumno}
-                    options={alumnos.map((a) => ({ value: a.id, label: `${a.userdetail.firstName} ${a.userdetail.lastName} ` }))}
-                    placeholder="Alumno"
-                    isClearable
-                  />
-                </div>
-                <div className="w-25">
-                  <Select
-                    value={selectedCarrera}
-                    onChange={setSelectedCarrera}
-                    options={carreras.map((c) => ({ value: c.id, label: `${c.nombre} ` }))}
-                    placeholder="Carrera"
-                    isClearable
-                  />
-                </div>
-                <button type="submit" className="btn border-primary text-primary align-self-end">
-                  Inscribir
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        {/* Listado de carreras */}
-        <div className="col-md-6">
-          <div className="p-4 bg-light border rounded shadow-sm" style={{ height: '450px' }}>
-            <h5>Listado de Carreras</h5>
-            <div className="table-responsive" style={{ maxHeight: "330px", overflowY: "auto" }}>
-              <table className="table table-sm table-bordered">
-                <thead className="table-light">
-                  <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Estado</th>
-                    <th className="text-end">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {carreras.map((c) => (
-                    <tr key={c.id}>
-                      <td>{c.id}</td>
-                      <td>
-                        {editId === c.id ? (
-                          <input
-                            className="form-control form-control-sm"
-                            name="nombre"
-                            value={editFormData.nombre}
-                            onChange={handleEditChange}
-                          />
-                        ) : (
-                          c.nombre
-                        )}
-                      </td>
-                      <td>
-                        {editId === c.id ? (
-                          <select
-                            className="form-select form-select-sm"
-                            name="estado"
-                            value={editFormData.estado}
-                            onChange={handleEditChange}
-                          >
-                            <option value="Activa">Activa</option>
-                            <option value="Inactiva">Inactiva</option>
-                          </select>
-                        ) : (
-                          c.estado
-                        )}
-                      </td>
-                      <td className="text-end">
-                        <div className="d-flex justify-content-end align-items-center gap-2"></div>
-                          {editId === c.id ? (
-                            <>
-                              <button className="btn btn-sm btn-success me-2" onClick={() => guardarEdicionCarrera(c.id)}>
-                                💾 Guardar
-                              </button>
-                              <button className="btn btn-sm btn-secondary" onClick={cancelarEditar}>
-                                ❌ Cancelar
-                              </button>
-                            </>
-                        ) : (
-                          <>
-                            <button
-                              className="btn btn-sm border-secondary text-secondary me-2"
-                              style={{ backgroundColor: 'transparent', transition: '0.2s' }}
-                              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}
-                              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                              onClick={() => abrirEditar(c)}
-                            >
-                              🖉 Editar
-                            </button>
-                            <button
-                              className="btn btn-sm border-dark text-dark"
-                              style={{ backgroundColor: 'transparent', transition: '0.2s' }}
-                              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f5'}
-                              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                              onClick={() => eliminarCarrera(c.id)}
-                            >
-                              🗑️ Eliminar
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+      <div className="table-responsive">
+        <table className="table table-hover table-bordered align-middle">
+          <thead className="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Estado</th>
+              <th>Responsable</th>
+              {tipoUsuario === "Admin" && <th>Acciones</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {carreras.map(carrera => (
+              <tr key={carrera.id}>
+                <td>{carrera.id}</td>
+                <td>{carrera.nombre}</td>
+                <td>{carrera.estado}</td>
+                <td>
+                  {carrera.user?.userdetail
+                    ? `${carrera.user.userdetail.firstName || ''} ${carrera.user.userdetail.lastName || ''}`
+                    : `ID: ${carrera.user_id}`}
+                </td>
+                {tipoUsuario === "Admin" && (
+                  <td>
+                    <button className="btn btn-sm btn-primary" onClick={() => abrirModalEditar(carrera)}>
+                      Editar
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
         {/* Alumnos inscriptos */}
         <div className="col-md-6">
